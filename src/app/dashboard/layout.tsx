@@ -138,28 +138,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Bell className="h-6 w-6 text-slate-400 group-hover:text-slate-200 transition-colors" />
             </button>
 
-            <div className="h-10 w-px bg-slate-800" />
-
-            {/* User identity */}
-            <div className="flex items-center space-x-3 cursor-pointer group">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-slate-100 group-hover:text-blue-400 transition-colors capitalize">{fullName}</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">{roleLabel[role]}</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 p-0.5 shadow-lg shadow-blue-900/20">
-                <div className="w-full h-full rounded-[10px] bg-slate-900 flex items-center justify-center">
-                  <User className="h-6 w-6 text-blue-400" />
+            {/* User identity & Actions */}
+            <div className="flex items-center space-x-4">
+              <div className="h-10 w-px bg-slate-800 hidden sm:block" />
+              
+              <div className="flex items-center space-x-3 group">
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-bold text-slate-100 capitalize">{fullName}</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">{roleLabel[role]}</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 p-0.5 shadow-lg shadow-blue-900/20">
+                  <div className="w-full h-full rounded-[10px] bg-slate-900 flex items-center justify-center">
+                    <User className="h-6 w-6 text-blue-400" />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Logout button visible in header on mobile */}
-            <button
-              onClick={handleLogout}
-              className="lg:hidden text-slate-500 hover:text-rose-400 transition-colors p-2 rounded-xl hover:bg-rose-500/10"
-            >
-              <LogOut className="h-5 w-5" />
-            </button>
+              <div className="h-10 w-px bg-slate-800 hidden md:block" />
+
+              <div className="hidden md:flex items-center space-x-2">
+                <button 
+                  onClick={() => router.push('/')}
+                  className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-white hover:border-slate-700 transition-all"
+                >
+                  Switch Portal
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-lg shadow-rose-900/10"
+                  title="Logout"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Mobile logout */}
+              <button
+                onClick={handleLogout}
+                className="md:hidden text-slate-500 hover:text-rose-400 transition-colors p-2 rounded-xl hover:bg-rose-500/10"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </header>
 

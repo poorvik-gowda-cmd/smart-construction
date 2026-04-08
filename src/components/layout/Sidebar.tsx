@@ -93,7 +93,7 @@ export default function Sidebar({ role, onLogout }: SidebarProps) {
       <div className="p-4 border-t border-slate-800 mt-auto">
         <button
           onClick={onLogout}
-          className="flex items-center w-full px-4 py-3 text-sm font-medium text-slate-400 hover:bg-red-500/10 hover:text-red-400 rounded-xl transition-all duration-200 group"
+          className="flex items-center w-full px-4 py-3 text-sm font-bold text-slate-100 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500 hover:text-white rounded-xl transition-all duration-200 group, shadow-lg shadow-rose-900/10"
         >
           <LogOut className="mr-3 h-5 w-5 transition-transform duration-200 group-hover:-translate-x-1" />
           Logout
