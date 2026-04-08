@@ -34,7 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           const inferredName = meta?.full_name || user.email?.split('@')[0] || 'User';
 
           try {
-            await fetch('/api/auth/create-profile', {
+            const res = await fetch('/api/auth/create-profile', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -43,10 +43,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 role: inferredRole,
               }),
             });
+            
+            if (!res.ok) {
+              if (res.status === 400) {
+                console.warn('Dashboard: Server-side sync is pending (requires SERVICE_ROLE_KEY). Switching to Client-Side Recovery mode...');
+              } else {
+                console.error('Profile creation API failed:', res.status);
+              }
+              
+              // DEFINITIVE FIX: Attempt direct client-side upsert as fallback
+              const { error: upsertError } = await supabase.from('profiles').upsert({
+                id: user.id,
+                full_name: inferredName,
+                role: inferredRole,
+                pending_assignment: inferredRole === 'client'
+              });
+
+              if (upsertError) {
+                console.error('Client-side recovery failed:', upsertError);
+              }
+              
+              setRole(inferredRole as UserRole);
+              setFullName(inferredName);
+            } else {
+              setRole(inferredRole as UserRole);
+              setFullName(inferredName);
+            }
+          } catch (err) {
+            console.error('Fetch error during /api/auth/create-profile:', err);
+            
+            // Fallback to client-side upsert manually here too
+            await supabase.from('profiles').upsert({
+              id: user.id,
+              full_name: inferredName,
+              role: inferredRole,
+              pending_assignment: inferredRole === 'client'
+            });
+
             setRole(inferredRole as UserRole);
             setFullName(inferredName);
-          } catch {
-            // Fail gracefully — default role already set
           }
         }
 

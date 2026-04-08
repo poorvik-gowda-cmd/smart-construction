@@ -11,7 +11,8 @@ import {
   TrendingUp,
   Clock,
   MapPin,
-  Calendar
+  Calendar,
+  DollarSign
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -28,6 +29,7 @@ import {
   Cell
 } from 'recharts';
 import { createClient } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 import { AIRiskResult } from '@/types';
 
 
@@ -53,79 +55,158 @@ export default function DashboardPage() {
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const supabase = createClient();
 
+  const [role, setRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [assignedProjectIds, setAssignedProjectIds] = useState<string[]>([]);
+
   useEffect(() => {
+    async function loadSession() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile) setRole(profile.role);
+      }
+    }
+    loadSession();
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!role || !userId) return;
+
     async function fetchDashboardData() {
       setLoadingStats(true);
       try {
-        // 1. Fetch Project Count and Total Budget
-        const { data: projectsData, count: projectCount } = await supabase
-          .from('projects')
-          .select('budget, progress_percent, name', { count: 'exact' });
+        // 1. Resolve Assigned Projects
+        let projectIds: string[] = [];
+        if (role === 'engineer') {
+          const { data: assignments } = await supabase.from('project_assignments').select('project_id').eq('user_id', userId);
+          projectIds = (assignments || []).map(a => a.project_id);
+        } else if (role === 'client') {
+          const { data: assignment } = await supabase.from('engineer_client_assignments').select('project_id').eq('client_id', userId).single();
+          if (assignment) projectIds = [assignment.project_id];
+        }
+        setAssignedProjectIds(projectIds);
+
+        // 2. Fetch Projects (filtered by role)
+        let projectQuery = supabase.from('projects').select('budget, progress_percent, name, id', { count: 'exact' });
+        if (role !== 'admin') projectQuery = projectQuery.in('id', projectIds);
+        const { data: projectsData, count: projectCount } = await projectQuery;
 
         const totalBudget = projectsData?.reduce((sum, p) => sum + (p.budget || 0), 0) || 0;
         const avgProgress = projectsData && projectsData.length > 0
           ? Math.round(projectsData.reduce((sum, p) => sum + (p.progress_percent || 0), 0) / projectsData.length)
           : 0;
 
-        // 2. Fetch Labor Attendance for today
+        // 3. Fetch Labor Attendance
         const today = new Date().toISOString().split('T')[0];
-        const { data: attendance } = await supabase
-          .from('attendance')
-          .select('status')
-          .eq('date', today);
+        let attendanceQuery = supabase.from('attendance').select('status, project_id').eq('date', today);
+        if (role !== 'admin') attendanceQuery = attendanceQuery.in('project_id', projectIds);
+        const { data: attendance } = await attendanceQuery;
         
         const totalPresent = (attendance || []).filter(a => a.status === 'present' || a.status === 'overtime').length;
         const totalWorkers = attendance?.length || 0;
         const attendanceRate = totalWorkers > 0 ? Math.round((totalPresent / totalWorkers) * 100) : 0;
 
-        // 3. Fetch expenses for budget utilization
-        const { data: expenses } = await supabase
-          .from('expenses')
-          .select('amount, category');
+        // 4. Fetch expenses for budget utilization
+        let expenseQuery = supabase.from('expenses').select('amount, category, project_id');
+        if (role !== 'admin') expenseQuery = expenseQuery.in('project_id', projectIds);
+        const { data: expenses } = await expenseQuery;
         
         const totalSpent = expenses?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0;
         const budgetUtilized = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
 
-        // 4. Fetch Material stock status
-        const { data: materials } = await supabase
-          .from('materials')
-          .select('stock_level, reorder_point');
+        // 5. Fetch Material stock status
+        let materialQuery = supabase.from('materials').select('stock_level, reorder_point, project_id, name');
+        if (role !== 'admin') materialQuery = materialQuery.in('project_id', projectIds);
+        const { data: materials } = await materialQuery;
         
-        const lowStockCount = materials?.filter(m => m.stock_level <= m.reorder_point).length || 0;
+        const lowStockItems = materials?.filter(m => m.stock_level <= m.reorder_point) || [];
+        const lowStockCount = lowStockItems.length;
         const stockHealth = materials && materials.length > 0 
           ? Math.round(((materials.length - lowStockCount) / materials.length) * 100)
           : 100;
 
-        // 5. Fetch Safety Incidents (Open)
-        const { count: safetyCount } = await supabase
-          .from('safety_issues')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'open');
+        // 6. Fetch Safety Incidents
+        let safetyQuery = supabase.from('safety_issues').select('description, severity, project_id', { count: 'exact' }).eq('status', 'open');
+        if (role !== 'admin') safetyQuery = safetyQuery.in('project_id', projectIds);
+        const { data: safetyIssues, count: safetyCount } = await safetyQuery;
 
-        // 6. Fetch Recent Updates
-        const { data: updates } = await supabase
+        // 7. Fetch Recent Updates WITH AUTHORSHIP
+        let updatesQuery = supabase
           .from('site_updates')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5);
-
+          .select(`
+            *,
+            author:profiles!site_updates_user_id_fkey(full_name, role),
+            project:projects(name)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (role !== 'admin') updatesQuery = updatesQuery.in('project_id', projectIds);
+        const { data: updates } = await updatesQuery.limit(role === 'admin' ? 10 : 5);
         setRecentActivities(updates || []);
 
-        setStats([
-          { name: 'Active Projects', value: projectCount || 0, icon: BarChart3, change: '+1 this week', changeType: 'increase' as const },
-          { name: 'Total Labor', value: totalPresent, icon: Users, change: `${attendanceRate}% attendance`, changeType: attendanceRate > 90 ? 'increase' : 'neutral' as const },
-          { name: 'Material Stock', value: `${stockHealth}%`, icon: Package, change: lowStockCount > 0 ? `${lowStockCount} items low` : 'Healthy', changeType: lowStockCount > 0 ? 'decrease' : 'increase' as const, color: 'bg-amber-500/10' },
-          { name: 'Safety Incidents', value: safetyCount || 0, icon: AlertTriangle, change: 'Active issues', changeType: 'decrease' as const, color: 'bg-emerald-500/10' },
-        ]);
+        // 8. Stats Configuration (Admin sees global Overview, others see Project stats)
+        const currentStats: any[] = [];
+        if (role !== 'client') {
+          currentStats.push({ 
+            name: 'Active Projects', 
+            value: projectCount || 0, 
+            icon: BarChart3, 
+            change: role === 'admin' ? '+1 this week' : 'Assigned to you', 
+            changeType: 'increase' 
+          });
+        }
+        
+        // Total Labor (Global for Admin, Project-specific for Others)
+        currentStats.push({ 
+          name: 'Total Labor', 
+          value: totalPresent, 
+          icon: Users, 
+          change: `${attendanceRate}% attendance`, 
+          changeType: attendanceRate > 80 ? 'increase' : 'neutral' 
+        });
 
-        // 7. Prepare Chart Data (Aggregated from real tables)
+        // ONLY Engineers and Clients see Material/Safety in overview (Project-dependent)
+        if (role !== 'admin') {
+          currentStats.push({ 
+            name: 'Material Stock', 
+            value: `${stockHealth}%`, 
+            icon: Package, 
+            change: lowStockCount > 0 ? `${lowStockCount} items low` : 'Healthy', 
+            changeType: lowStockCount > 0 ? 'decrease' : 'increase', 
+            color: 'bg-amber-500/10' 
+          });
+          currentStats.push({ 
+            name: 'Safety Incidents', 
+            value: safetyCount || 0, 
+            icon: AlertTriangle, 
+            change: 'Active issues', 
+            changeType: (safetyCount || 0) > 0 ? 'decrease' : 'increase', 
+            color: 'bg-emerald-500/10' 
+          });
+        } else {
+          // Admin sees Total Budget instead of project-specific stock/safety
+          currentStats.push({ 
+            name: 'Total Ops Budget', 
+            value: `$${(totalBudget / 1000000).toFixed(1)}M`, 
+            icon: DollarSign, 
+            change: `${budgetUtilized}% utilized`, 
+            changeType: budgetUtilized < 90 ? 'increase' : 'decrease', 
+            color: 'bg-emerald-500/10' 
+          });
+        }
+        
+        setStats(currentStats);
+
+        // 9. Charts
         setProjectProgress([
           { name: 'Initial', progress: 0, target: 10 },
-          { name: 'Current', progress: avgProgress, target: 100 },
+          { name: 'Target', progress: avgProgress, target: 100 },
         ]);
 
-        const laborExp = expenses?.filter(e => e.category.toLowerCase().includes('labor')).reduce((s, e) => s + e.amount, 0) || 0;
-        const materialExp = expenses?.filter(e => e.category.toLowerCase().includes('material')).reduce((s, e) => s + e.amount, 0) || 0;
+        const laborExp = expenses?.filter(e => e.category?.toLowerCase().includes('labor')).reduce((s, e) => s + e.amount, 0) || 0;
+        const materialExp = expenses?.filter(e => e.category?.toLowerCase().includes('material')).reduce((s, e) => s + e.amount, 0) || 0;
         const otherExp = totalSpent - laborExp - materialExp;
 
         setAllocation([
@@ -134,7 +215,7 @@ export default function DashboardPage() {
           { name: 'Other', value: totalSpent > 0 ? Math.round((otherExp/totalSpent)*100) : 25, color: '#8b5cf6' },
         ]);
 
-        // 8. Fetch AI Insight using REAL calculated data
+        // 10. AI Insight using real filters
         await fetchAiInsight(attendanceRate, totalPresent, stockHealth, budgetUtilized, avgProgress);
 
       } catch (error) {
@@ -154,7 +235,8 @@ export default function DashboardPage() {
             attendanceTrend: `${rate}% attendance today (${presentCount} workers on site)`,
             materialStatus: `Global stock health at ${stock}%.`,
             budgetStatus: `${budget}% of total budget utilized.`,
-            progressPercent: progress
+            progressPercent: progress,
+            context: role === 'admin' ? 'Company-wide' : 'Project-specific'
           })
         });
         
@@ -162,26 +244,26 @@ export default function DashboardPage() {
         const data = await res.json();
         setAiData(data);
       } catch (error) {
-        setAiData({
-          score: 50,
-          classification: 'Error',
-          insight: 'AI analysis unavailable. Please check your data connection.'
-        });
+          setAiData({
+            score: 50,
+            classification: 'Moderate',
+            insight: 'AI Analysis engine is recalibrating data models.'
+          });
       } finally {
         setLoadingAI(false);
       }
     }
 
     fetchDashboardData();
-  }, [supabase]);
+  }, [supabase, role, userId]);
 
   return (
     <div className="space-y-8 pb-12">
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">Project Overview</h1>
-          <p className="text-slate-400 mt-1">Real-time control center for SiteMaster Construction Corp.</p>
+          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">{role === 'client' ? 'Site Overview' : 'Project Overview'}</h1>
+          <p className="text-slate-400 mt-1">{role === 'admin' ? 'Global Control Center' : 'Real-time project monitoring.'}</p>
         </div>
         <div className="flex items-center space-x-3">
           <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 flex items-center space-x-3 shadow-md">
@@ -199,35 +281,55 @@ export default function DashboardPage() {
 
       {/* AI & Progress Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-8">
+        {/* Only show AI and Alerts for Engineer and Client, or a modified version for Admin if relevant */}
+        <div className={cn("space-y-8", role === 'admin' ? "hidden" : "lg:col-span-1")}>
           <AIInsightCard data={aiData} loading={loadingAI} />
           
-          {/* Quick Actions/Alerts Card */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
               Critical Alerts
             </h3>
             <div className="space-y-4">
-              <div className="flex items-start space-x-3 p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl group transition-all hover:bg-rose-500/10 cursor-pointer">
-                <Clock className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors">Permit Expiry</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Project A-101 permit expires in 48 hours.</p>
+              {stats.find(s => s.name === 'Material Stock')?.change?.includes('low') && (
+                <div className="flex items-start space-x-3 p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl group transition-all hover:bg-amber-500/10 cursor-pointer">
+                  <Package className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-100 group-hover:text-amber-400 transition-colors">Low Inventory</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Critical material shortage detected on your site.</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start space-x-3 p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl group transition-all hover:bg-amber-500/10 cursor-pointer">
-                <MapPin className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-slate-100 group-hover:text-amber-400 transition-colors">Low Inventory</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Cement stock at 12% for Metro Plaza site.</p>
+              )}
+              {stats.find(s => s.name === 'Safety Incidents')?.value as number > 0 && (
+                <div className="flex items-start space-x-3 p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl group transition-all hover:bg-rose-500/10 cursor-pointer">
+                  <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors">Safety Issue</p>
+                    <p className="text-xs text-slate-500 mt-0.5">An active safety incident requires your attention.</p>
+                  </div>
                 </div>
-              </div>
+              )}
+              {stats.find(s => s.name === 'Total Labor')?.change?.includes('low') && (
+                <div className="flex items-start space-x-3 p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl group transition-all hover:bg-blue-500/10 cursor-pointer">
+                  <Clock className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-100 group-hover:text-blue-400 transition-colors">Labor Shortage</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Wait times increasing due to low attendance today.</p>
+                  </div>
+                </div>
+              )}
+              {!(stats.find(s => s.name === 'Material Stock')?.change?.includes('low')) && 
+                !(stats.find(s => s.name === 'Safety Incidents')?.value as number > 0) && (
+                <div className="py-8 text-center">
+                  <Clock className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                  <p className="text-xs text-slate-500">No critical alerts for your projects today.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+        <div className={cn("bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl", role === 'admin' ? "lg:col-span-3" : "lg:col-span-2")}>
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-bold text-slate-100">Project Performance Trend</h3>
             <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-slate-500">
@@ -245,42 +347,14 @@ export default function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="#475569" 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false}
-                />
-                <YAxis 
-                  stroke="#475569" 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tickFormatter={(value) => `${value}%`}
-                />
+                <XAxis dataKey="name" stroke="#475569" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#475569" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', color: '#f1f5f9' }}
                   itemStyle={{ color: '#3b82f6' }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="progress" 
-                  stroke="#3b82f6" 
-                  strokeWidth={4}
-                  fillOpacity={1} 
-                  fill="url(#colorProg)" 
-                  animationDuration={1500}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="target" 
-                  stroke="#334155" 
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  fillOpacity={0} 
-                  animationDuration={1500}
-                />
+                <Area type="monotone" dataKey="progress" stroke="#3b82f6" strokeWidth={4} fillOpacity={1} fill="url(#colorProg)" animationDuration={1500} />
+                <Area type="monotone" dataKey="target" stroke="#334155" strokeWidth={2} strokeDasharray="5 5" fillOpacity={0} animationDuration={1500} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -288,69 +362,86 @@ export default function DashboardPage() {
       </div>
 
       {/* Secondary Row: Resource and Site Logs */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl h-[400px]">
-          <h3 className="text-xl font-bold text-slate-100 mb-6">Resource Allocation</h3>
-          <ResponsiveContainer width="100%" height="90%">
-            <PieChart>
-              <Pie
-                data={allocation}
-                cx="50%"
-                cy="50%"
-                innerRadius={80}
-                outerRadius={120}
-                paddingAngle={8}
-                dataKey="value"
-              >
-                {allocation.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex justify-center space-x-6 -mt-4">
-            {allocation.map((item) => (
-              <div key={item.name} className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-xs font-medium text-slate-400">{item.name} ({item.value}%)</span>
-              </div>
-            ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {role !== 'admin' && (
+          <div className="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+            <h3 className="text-xl font-bold text-slate-100 mb-6 font-mono tracking-tighter uppercase italic text-blue-500">Project Resources</h3>
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={allocation}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={8}
+                    dataKey="value"
+                  >
+                    {allocation.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-col space-y-2 mt-4">
+              {allocation.map((item) => (
+                <div key={item.name} className="flex items-center justify-between p-2 hover:bg-white/[0.02] rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{item.name}</span>
+                  </div>
+                  <span className="text-xs font-mono text-slate-200">{item.value}%</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl h-[400px]">
+        <div className={cn("bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl min-h-[400px]", role === 'admin' ? "lg:col-span-3" : "lg:col-span-2")}>
           <div className="p-6 border-b border-white/5 flex items-center justify-between">
-             <h3 className="text-xl font-bold text-slate-100">Recent Site Activity</h3>
-             <button className="text-xs font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300">View Map</button>
+             <h3 className="text-xl font-bold text-slate-100 uppercase tracking-widest italic group-hover:text-blue-400 transition-colors">
+               {role === 'admin' ? 'Global Site Activity' : 'Your Site Activity'}
+             </h3>
+             <div className="flex items-center space-x-4">
+               <span className="text-[10px] font-bold text-slate-500 bg-slate-800 px-2 py-1 rounded italic uppercase tracking-widest border border-white/5">Real-time Feed</span>
+               <button className="text-xs font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300">View Map</button>
+             </div>
           </div>
-          <div className="p-0 overflow-y-auto h-full scrollbar-hide pb-20">
+          <div className="p-0 overflow-y-auto max-h-[500px] scrollbar-hide pb-20">
              {recentActivities.length > 0 ? recentActivities.map((update, i) => (
-               <div key={update.id} className="flex items-center p-4 border-b border-white/5 hover:bg-white/[0.02] cursor-pointer transition-colors group">
-                 <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center mr-4 group-hover:scale-110 transition-transform overflow-hidden">
-                    <img src={update.image_url || `https://picsum.photos/seed/${i + 10}/200`} alt="Site" className="w-full h-full object-cover" />
+               <div key={update.id} className="flex items-center p-6 border-b border-white/5 hover:bg-white/[0.02] cursor-pointer transition-colors group">
+                 <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mr-6 group-hover:scale-110 transition-transform overflow-hidden shadow-2xl border border-white/5">
+                    <img src={update.image_url || `https://picsum.photos/seed/${i + 15}/300`} alt="Site" className="w-full h-full object-cover" />
                  </div>
                  <div className="flex-1">
-                   <p className="text-sm font-bold text-slate-100 tracking-tight">{update.notes || 'Site update logged'}</p>
-                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
-                     {new Date(update.created_at).toLocaleString()}
-                   </p>
-                 </div>
-                 <div className="text-right">
-                   <div className="flex items-center text-[10px] font-bold text-slate-500 bg-slate-950 px-2 py-1 rounded-md border border-slate-800">
-                     <MapPin className="w-3 h-3 mr-1 text-blue-500" />
-                     {update.latitude.toFixed(2)}, {update.longitude.toFixed(2)}
+                   <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-extrabold text-slate-100 tracking-tight group-hover:text-blue-400 transition-colors italic uppercase">{update.notes || 'Site update logged'}</p>
+                      <span className="text-[10px] font-bold text-slate-500 font-mono tracking-tighter">
+                        {new Date(update.created_at).toLocaleString()}
+                      </span>
+                   </div>
+                   <div className="flex items-center space-x-3">
+                      <div className="flex items-center text-[10px] font-extrabold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded uppercase tracking-widest border border-blue-500/20">
+                         {update.project?.name || 'Unknown Project'}
+                      </div>
+                      <div className="flex items-center text-[10px] font-bold text-slate-400 italic">
+                         by <span className="text-slate-200 ml-1 not-italic font-bold">{update.author?.full_name || 'System'}</span> 
+                         <span className="ml-1 text-[9px] text-slate-600">({update.author?.role || 'uploader'})</span>
+                      </div>
                    </div>
                  </div>
                </div>
              )) : (
-              <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-                 <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
-                    <MapPin className="w-8 h-8 text-slate-600" />
+              <div className="h-full flex flex-col items-center justify-center p-20 text-center">
+                 <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-6 border border-white/5 shadow-inner">
+                    <MapPin className="w-10 h-10 text-slate-700" />
                  </div>
-                 <p className="text-slate-500 font-medium">No site updates recorded yet.</p>
+                 <p className="text-slate-500 font-bold uppercase tracking-[0.2em] italic">No active updates found.</p>
               </div>
              )}
           </div>

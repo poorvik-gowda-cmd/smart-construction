@@ -94,7 +94,7 @@ export default function AuthPage() {
         .single();
 
       if (profileError || !profile) {
-        console.error('Profile fetch error:', profileError);
+        console.error('Profile fetch failure:', profileError);
         setError('Invalid Security Access Key. Please contact your Admin.');
         setLoading(false);
         return;
@@ -103,6 +103,10 @@ export default function AuthPage() {
       // If key is valid, proceed with login using the email found in the profile
       loginEmail = profile.email || `${sanitizedKey.toLowerCase()}@sitemaster.com`;
       loginPassword = 'SiteMaster123!'; 
+      
+      console.log('--- Engineer Login Debug ---');
+      console.log('Resolved Email:', loginEmail);
+      console.log('Attempting auth with password prefix:', loginPassword.substring(0, 3) + '...');
     }
 
     const { error } = await supabase.auth.signInWithPassword({ 
@@ -111,7 +115,8 @@ export default function AuthPage() {
     });
 
     if (error) {
-      setError(role === 'engineer' ? 'Invalid Company ID' : error.message);
+      console.error('Supabase Auth error:', error.message);
+      setError(role === 'engineer' ? `Authentication Failed: ${error.message}` : error.message);
       setLoading(false);
     } else {
       router.push('/dashboard');

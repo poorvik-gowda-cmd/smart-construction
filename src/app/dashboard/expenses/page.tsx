@@ -12,7 +12,8 @@ import {
   Filter,
   ArrowUpRight,
   ArrowDownRight,
-  X
+  X,
+  Calendar
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -39,23 +40,65 @@ export default function ExpensesPage() {
   const [budgetTrend, setBudgetTrend] = useState<any[]>([]);
 
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ amount: '', category: 'Material', description: '' });
+  const [formData, setFormData] = useState({ amount: '', category: 'Material', description: '', project_id: '' });
+
+  const [role, setRole] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [totalBudget, setTotalBudget] = useState(0);
+  const [totalSpent, setTotalSpent] = useState(0);
+  const [projects, setProjects] = useState<any[]>([]);
 
   useEffect(() => {
+    async function loadSession() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile) setRole(profile.role);
+      }
+    }
+    loadSession();
+  }, []);
+
+  useEffect(() => {
+    if (!role || !userId) return;
+
     async function fetchFinancials() {
       const supabase = createClient();
-      // Fetch ledgers
-      const { data: txs } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
+      
+      // 1. Resolve Assigned Projects
+      let projectIds: string[] = [];
+      if (role === 'engineer') {
+        const { data: assignments } = await supabase.from('project_assignments').select('project_id').eq('user_id', userId);
+        projectIds = (assignments || []).map(a => a.project_id);
+      } else if (role === 'client') {
+        const { data: assignment } = await supabase.from('engineer_client_assignments').select('project_id').eq('client_id', userId).single();
+        if (assignment) projectIds = [assignment.project_id];
+      }
+      
+      // 2. Fetch Project Budgets
+      let projectQuery = supabase.from('projects').select('id, name, budget');
+      if (role !== 'admin') projectQuery = projectQuery.in('id', projectIds);
+      const { data: projectsData } = await projectQuery;
+      setProjects(projectsData || []);
+      const budgetSum = projectsData?.reduce((s, p) => s + (p.budget || 0), 0) || 0;
+      setTotalBudget(budgetSum);
+
+      // 3. Fetch Expenses
+      let txQuery = supabase.from('expenses').select('*').order('created_at', { ascending: false });
+      if (role !== 'admin') txQuery = txQuery.in('project_id', projectIds);
+      const { data: txs } = await txQuery;
+      
       if (txs) {
          setTransactions(txs);
+         const spentSum = txs.reduce((s, e) => s + (e.amount || 0), 0);
+         setTotalSpent(spentSum);
          
-         // Aggregate for Pie Chart & Bar Chart (Simplified)
          const catMap: any = { 'Labor': 0, 'Material': 0, 'Permits': 0, 'Equipment': 0, 'Misc': 0 };
          txs.forEach(t => {
             const cat = t.category || 'Misc';
-            if (catMap[cat] !== undefined) {
-               catMap[cat] += Number(t.amount || 0);
-            }
+            if (catMap[cat] !== undefined) catMap[cat] += Number(t.amount || 0);
          });
          
          setExpenseData([
@@ -65,24 +108,32 @@ export default function ExpensesPage() {
             { name: 'Equipment', value: catMap['Equipment'], color: '#ec4899' },
             { name: 'Misc', value: catMap['Misc'], color: '#f43f5e' }
          ]);
+
+         setBudgetTrend([
+           { month: 'Target', budget: budgetSum, actual: 0 },
+           { month: 'Current', budget: budgetSum, actual: spentSum }
+         ]);
       }
     }
     fetchFinancials();
-  }, []);
+  }, [role, userId]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (role === 'engineer') return; // Extra safety
+    
     const supabase = createClient();
     const { data, error } = await supabase.from('expenses').insert([{
       amount: Number(formData.amount),
       category: formData.category,
-      description: formData.description
+      description: formData.description,
+      project_id: formData.project_id
     }]).select();
 
     if (data && !error) {
        setTransactions([data[0], ...transactions]);
        setShowModal(false);
-       setFormData({ amount: '', category: 'Material', description: '' });
+       setFormData({ amount: '', category: 'Material', description: '', project_id: '' });
     } else {
        alert("Error adding expense.");
     }
@@ -93,12 +144,14 @@ export default function ExpensesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Financial Oversight</h1>
-          <p className="text-slate-500 mt-1">Monitor project spending, analyze budget variance, and track overheads.</p>
+          <p className="text-slate-500 mt-1">{role === 'engineer' ? 'Assigned project budgets and expenditure.' : 'Monitor project spending, analyze budget variance, and track overheads.'}</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-emerald-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest leading-none">
-          <Plus className="w-5 h-5 mr-2" />
-          Add Expense
-        </button>
+        {role === 'admin' && (
+          <button onClick={() => setShowModal(true)} className="flex items-center bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-emerald-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest leading-none">
+            <Plus className="w-5 h-5 mr-2" />
+            Add Expense
+          </button>
+        )}
       </div>
 
       {/* Top Cards Section */}
@@ -114,8 +167,8 @@ export default function ExpensesPage() {
                </div>
             </div>
             <div>
-               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">$2,750,000</p>
-               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Total Capital Spent</p>
+               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">${totalBudget.toLocaleString()}</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Assigned Project Budget</p>
             </div>
          </div>
 
@@ -126,25 +179,25 @@ export default function ExpensesPage() {
                </div>
                <div className="flex items-center text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-full uppercase tracking-tighter">
                   <ArrowDownRight className="w-3.5 h-3.5 mr-1" />
-                  Over Budget
+                  {totalBudget > totalSpent ? 'Under Budget' : 'Over Budget'}
                </div>
             </div>
             <div>
-               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">$420,000</p>
-               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Budget Variance (Q1)</p>
+               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">${(totalBudget - totalSpent).toLocaleString()}</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Budget Variance</p>
             </div>
          </div>
 
          <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-lg group hover:border-emerald-900/40 transition-colors">
             <div className="flex items-center justify-between">
                <div className="p-3 bg-emerald-600/10 rounded-2xl text-emerald-500">
-                  <CreditCard className="w-6 h-6" />
+                  <DollarSign className="w-6 h-6" />
                </div>
-               <span className="text-[10px] font-bold text-slate-500 bg-slate-950 px-2.5 py-1 rounded uppercase tracking-widest leading-none border border-white/5">Verified</span>
+               <span className="text-[10px] font-bold text-slate-500 bg-slate-950 px-2.5 py-1 rounded uppercase tracking-widest leading-none border border-white/5">Real-time</span>
             </div>
             <div>
-               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">142</p>
-               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Monthly Transactions</p>
+               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">${totalSpent.toLocaleString()}</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Actual Expenditure</p>
             </div>
          </div>
       </div>
@@ -323,6 +376,15 @@ export default function ExpensesPage() {
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Description</label>
                 <input required type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="e.g., Concrete Delivery" />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Project</label>
+                <select required value={formData.project_id} onChange={e => setFormData({...formData, project_id: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                  <option value="">-- Select Project --</option>
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
               </div>
               <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-xl shadow-emerald-900/20 uppercase tracking-widest text-xs transition-all mt-4">
                 Record Expense

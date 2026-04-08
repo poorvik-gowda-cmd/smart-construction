@@ -4,11 +4,12 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 // Uses SERVICE ROLE key to bypass RLS — safe because we verify the user's JWT first
-const getAdminClient = () =>
-  createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  );
+const getAdminClient = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+};
 
 export async function POST(req: Request) {
   try {
@@ -24,6 +25,9 @@ export async function POST(req: Request) {
     }
 
     const admin = getAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: 'Missing Server Configuration (Service Role Key)' }, { status: 400 });
+    }
 
     // Verify the user actually exists in auth
     const { data: { user }, error: userError } = await admin.auth.admin.getUserById(userId);
