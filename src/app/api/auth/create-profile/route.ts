@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const allowedRoles = ['admin', 'internal', 'client'];
+    const allowedRoles = ['admin', 'engineer', 'client'];
     if (!allowedRoles.includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
@@ -36,8 +36,8 @@ export async function POST(req: Request) {
       id: userId,
       full_name: fullName || '',
       role,
-      // Clients must be approved by admin before they can access their dashboard
-      is_approved: role === 'client' ? false : true,
+      // Clients now start as "pending_assignment" instead of having a separate bit
+      pending_assignment: role === 'client' ? true : false,
     });
 
     if (profileError) {

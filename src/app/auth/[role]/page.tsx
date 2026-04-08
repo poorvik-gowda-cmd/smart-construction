@@ -32,7 +32,7 @@ const roleConfig: Record<Role, {
   },
   engineer: {
     label: 'Engineer',
-    supabaseRole: 'internal',
+    supabaseRole: 'engineer',
     icon: HardHat,
     gradient: 'from-amber-500 to-orange-600',
     glow: 'shadow-amber-900/40',
