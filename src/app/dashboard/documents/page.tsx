@@ -79,12 +79,17 @@ export default function DocumentsPage() {
       }
 
       // Save document record to DB
+      const currentUserId = (await supabase.auth.getUser()).data.user?.id || null;
+      
       const { data, error: dbError } = await supabase.from('documents').insert([{
         name: formData.name || selectedFile.name,
         file_url: fileUrl,
         file_type: formData.file_type,
         shared_with_client_id: formData.shared_with_client_id || null,
-        uploaded_by: (await supabase.auth.getUser()).data.user?.id || null,
+        uploaded_by: currentUserId,
+        size: (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB',
+        uploaded: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        category: formData.file_type === 'PDF' ? 'Plan' : 'Record'
       }]).select();
 
       if (dbError) throw dbError;
@@ -212,7 +217,7 @@ export default function DocumentsPage() {
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Share with Client (Optional)</label>
                 <select value={formData.shared_with_client_id} onChange={e => setFormData({...formData, shared_with_client_id: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
-                  <option value="">Internal only (engineer & admin)</option>
+                  <option value="">Team only (engineer & admin)</option>
                   {clients.map((c: any) => (
                     <option key={c.client_id} value={c.client_id}>{c.client?.full_name || c.client_id}</option>
                   ))}
