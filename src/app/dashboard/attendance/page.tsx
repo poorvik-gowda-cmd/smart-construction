@@ -25,12 +25,19 @@ export default function AttendancePage() {
   );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+          if (profile) setRole(profile.role);
+        }
+
         // 1. Fetch Labor
         const { data: laborData, error: laborError } = await supabase
           .from('labor')
@@ -135,14 +142,17 @@ export default function AttendancePage() {
              <Download className="w-4 h-4" />
              <span>Export Log</span>
           </button>
-          <button 
-            onClick={handleSave}
-            disabled={saving || loading}
-            className="flex items-center bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-blue-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest"
-          >
-            {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
-            {saving ? 'Saving...' : 'Save Attendance'}
-          </button>
+          
+          {role !== 'admin' && (
+            <button 
+              onClick={handleSave}
+              disabled={saving || loading}
+              className="flex items-center bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-blue-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest"
+            >
+              {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
+              {saving ? 'Saving...' : 'Save Attendance'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -165,19 +175,23 @@ export default function AttendancePage() {
             </div>
 
             <div className="flex items-center space-x-2">
-               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mark All:</span>
-               <button 
-                onClick={() => markAll('present')}
-                className="p-1 px-3 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
-               >
-                Present
-               </button>
-               <button 
-                onClick={() => markAll('absent')}
-                className="p-1 px-3 bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase rounded-lg border border-rose-500/20 hover:bg-rose-500/20 transition-all"
-               >
-                Absent
-               </button>
+               {role !== 'admin' && (
+                 <>
+                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mark All:</span>
+                   <button 
+                    onClick={() => markAll('present')}
+                    className="p-1 px-3 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
+                   >
+                    Present
+                   </button>
+                   <button 
+                    onClick={() => markAll('absent')}
+                    className="p-1 px-3 bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase rounded-lg border border-rose-500/20 hover:bg-rose-500/20 transition-all"
+                   >
+                    Absent
+                   </button>
+                 </>
+               )}
             </div>
          </div>
 
@@ -220,28 +234,34 @@ export default function AttendancePage() {
                              <td className="px-6 py-5">
                                 <div className="flex items-center justify-center space-x-2">
                                    <button 
-                                     onClick={() => toggleStatus(person.id, 'present')}
+                                     onClick={() => role !== 'admin' && toggleStatus(person.id, 'present')}
+                                     disabled={role === 'admin'}
                                      className={cn(
                                        "p-2 rounded-xl transition-all border",
-                                       isPresent ? "bg-emerald-600/20 text-emerald-500 border-emerald-500/30 shadow-lg shadow-emerald-500/10" : "bg-slate-950 border-slate-800 text-slate-600 hover:text-emerald-500"
+                                       isPresent ? "bg-emerald-600/20 text-emerald-500 border-emerald-500/30 shadow-lg shadow-emerald-500/10" : "bg-slate-950 border-slate-800 text-slate-600 hover:text-emerald-500",
+                                       role === 'admin' && !isPresent && "opacity-30 cursor-not-allowed"
                                      )}
                                    >
                                       <CheckCircle2 className="w-5 h-5" />
                                    </button>
                                    <button 
-                                     onClick={() => toggleStatus(person.id, 'absent')}
+                                     onClick={() => role !== 'admin' && toggleStatus(person.id, 'absent')}
+                                     disabled={role === 'admin'}
                                      className={cn(
                                        "p-2 rounded-xl transition-all border",
-                                       isAbsent ? "bg-rose-600/20 text-rose-500 border-rose-500/30 shadow-lg shadow-rose-500/10" : "bg-slate-950 border-slate-800 text-slate-600 hover:text-rose-500"
+                                       isAbsent ? "bg-rose-600/20 text-rose-500 border-rose-500/30 shadow-lg shadow-rose-500/10" : "bg-slate-950 border-slate-800 text-slate-600 hover:text-rose-500",
+                                       role === 'admin' && !isAbsent && "opacity-30 cursor-not-allowed"
                                      )}
                                    >
                                       <XCircle className="w-5 h-5" />
                                    </button>
                                    <button 
-                                     onClick={() => toggleStatus(person.id, 'overtime')}
+                                     onClick={() => role !== 'admin' && toggleStatus(person.id, 'overtime')}
+                                     disabled={role === 'admin'}
                                      className={cn(
                                        "p-2 rounded-xl transition-all border",
-                                       isOT ? "bg-blue-600/20 text-blue-500 border-blue-500/30 shadow-lg shadow-blue-500/10" : "bg-slate-950 border-slate-800 text-slate-600 hover:text-blue-500"
+                                       isOT ? "bg-blue-600/20 text-blue-500 border-blue-500/30 shadow-lg shadow-blue-500/10" : "bg-slate-950 border-slate-800 text-slate-600 hover:text-blue-500",
+                                       role === 'admin' && !isOT && "opacity-30 cursor-not-allowed"
                                      )}
                                    >
                                       <Clock className="w-5 h-5" />
@@ -256,9 +276,9 @@ export default function AttendancePage() {
                                      onChange={(e) => updateOvertime(person.id, parseFloat(e.target.value))}
                                      className={cn(
                                        "w-16 bg-slate-950 border border-slate-800 rounded-lg py-1 px-2 text-xs font-bold text-center focus:outline-none focus:ring-2 focus:ring-blue-500/20",
-                                       !isOT && "opacity-30 cursor-not-allowed"
+                                       (!isOT || role === 'admin') && "opacity-30 cursor-not-allowed"
                                      )}
-                                     disabled={!isOT}
+                                     disabled={!isOT || role === 'admin'}
                                    />
                                 </div>
                              </td>

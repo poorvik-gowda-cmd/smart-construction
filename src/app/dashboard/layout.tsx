@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Bell, Search, User, Menu, X, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<UserRole | null>(null);
@@ -168,10 +169,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center space-x-6">
-            <button className="relative group">
+            <Link href="/dashboard/complaints" className="relative group">
               <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-slate-950 animate-pulse" />
               <Bell className="h-6 w-6 text-slate-400 group-hover:text-slate-200 transition-colors" />
-            </button>
+            </Link>
 
             {/* User identity & Actions */}
             <div className="flex items-center space-x-4">

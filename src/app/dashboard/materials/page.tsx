@@ -27,6 +27,8 @@ export default function MaterialsPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', unit: 'Bags', stock_level: '', reorder_point: '' });
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
   useEffect(() => {
     async function fetchMaterials() {
@@ -46,6 +48,16 @@ export default function MaterialsPage() {
         
         const projectIds = assignments?.map(a => a.project_id) || [];
         query = query.in('project_id', projectIds);
+
+        if (projectIds.length > 0) {
+          const { data: pData } = await supabase.from('projects').select('id, name').in('id', projectIds);
+          setProjects(pData || []);
+          if (pData && pData.length > 0) setSelectedProjectId(pData[0].id);
+        }
+      } else {
+        const { data: pData } = await supabase.from('projects').select('id, name');
+        setProjects(pData || []);
+        if (pData && pData.length > 0) setSelectedProjectId(pData[0].id);
       }
 
       const { data, error } = await query;
@@ -59,9 +71,14 @@ export default function MaterialsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedProjectId) {
+      alert("Please select a project.");
+      return;
+    }
     const supabase = createClient();
     const { data, error } = await supabase.from('materials').insert([{
       name: formData.name,
+      project_id: selectedProjectId,
       unit: formData.unit,
       stock_level: Number(formData.stock_level),
       reorder_point: Number(formData.reorder_point)
@@ -251,6 +268,18 @@ export default function MaterialsPage() {
               </button>
             </div>
             <form onSubmit={handleCreate} className="space-y-4">
+              {projects.length > 0 && (
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Assign to Project</label>
+                  <select
+                    value={selectedProjectId}
+                    onChange={e => setSelectedProjectId(e.target.value)}
+                    className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  >
+                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Material Name</label>
                 <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="e.g., Portland Cement" />

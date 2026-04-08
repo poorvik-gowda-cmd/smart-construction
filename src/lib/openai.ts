@@ -37,10 +37,35 @@ export const analyzeProjectRisk = async (data: {
     return content ? JSON.parse(content) : null;
   } catch (error) {
     console.error('AI Analysis Error:', error);
+    
+    // Deterministic Fallback Logic (used if API key is invalid/unfunded)
+    let score = 85; 
+    let classification = 'Safe';
+    let insight = 'Project is proceeding according to timeline specifications. Resource allocation is optimal.';
+
+    if (data.attendanceTrend.includes('low') || data.attendanceTrend.includes('absent')) {
+      score -= 20;
+      classification = 'Moderate';
+      insight = 'Labor shortages detected. Recommend adjusting daily targets to compensate for absence trends.';
+    }
+
+    if (data.materialStatus.includes('low') || data.materialStatus.includes('Shortage')) {
+      score -= 30;
+      classification = 'High Risk';
+      insight = 'Critical material shortages identified. Immediate procurement action required to prevent structural delays.';
+    }
+
+    if (data.progressPercent < 50) {
+      score -= 15;
+    }
+
+    if (score < 40) classification = 'High Risk';
+    else if (score < 75) classification = 'Moderate';
+
     return {
-      score: 50,
-      classification: 'Error',
-      insight: 'Could not generate AI insights at this time.',
+      score: Math.max(10, score),
+      classification,
+      insight: `[AI Fallback Mode] ${insight}`,
     };
   }
 };

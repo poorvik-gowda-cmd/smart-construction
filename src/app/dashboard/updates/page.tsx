@@ -134,8 +134,25 @@ export default function SiteUpdatesPage() {
         finalImageUrl = publicUrl;
       }
 
-      const lat = 28.61 + (Math.random() - 0.5) * 0.1;
-      const lng = 77.23 + (Math.random() - 0.5) * 0.1;
+      let lat = 28.61;
+      let lng = 77.23;
+
+      // Real-time Geolocation extraction
+      if ('geolocation' in navigator) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0
+            });
+          });
+          lat = position.coords.latitude;
+          lng = position.coords.longitude;
+        } catch (geoError) {
+          console.warn('Geolocation failed, falling back to default:', geoError);
+        }
+      }
       
       const { data, error } = await supabase
         .from('site_updates')
