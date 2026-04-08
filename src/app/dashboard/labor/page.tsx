@@ -28,7 +28,24 @@ export default function LaborPage() {
   useEffect(() => {
     async function fetchLabor() {
       const supabase = createClient();
-      const { data, error } = await supabase.from('labor').select('*');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+
+      let query = supabase.from('labor').select('*');
+
+      if (profile?.role === 'engineer') {
+        const { data: assignments } = await supabase
+          .from('engineer_client_assignments')
+          .select('project_id')
+          .eq('engineer_id', user.id);
+        
+        const projectIds = assignments?.map(a => a.project_id) || [];
+        query = query.in('project_id', projectIds);
+      }
+
+      const { data, error } = await query;
       if (data && !error) {
         setLabor(data);
       }

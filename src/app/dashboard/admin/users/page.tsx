@@ -97,6 +97,7 @@ export default function AdminUsersPage() {
                 <tr className="bg-slate-950/30 border-b border-white/5">
                   <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">User</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Role</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Security Key</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Joined</th>
                 </tr>
@@ -119,6 +120,15 @@ export default function AdminUsersPage() {
                       <span className={cn('text-[10px] font-bold uppercase tracking-widest border px-2.5 py-1 rounded-full', roleColors[user.role] || 'bg-slate-800 text-slate-400')}>
                         {user.role}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {user.role === 'engineer' ? (
+                        <code className="bg-slate-950 text-blue-400 px-2 py-1 rounded border border-blue-500/20 text-[10px] font-bold font-mono">
+                          {user.access_key || 'NOT SET'}
+                        </code>
+                      ) : (
+                        <span className="text-[10px] text-slate-600">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       {!user.pending_assignment ? (

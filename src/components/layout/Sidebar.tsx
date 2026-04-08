@@ -45,7 +45,7 @@ export default function Sidebar({ role, onLogout }: SidebarProps) {
     { name: 'Site Updates', href: '/dashboard/updates', icon: MapIcon, roles: ['admin', 'engineer'] },
     { name: 'Documents', href: '/dashboard/documents', icon: Files, roles: ['admin', 'engineer'] },
     { name: 'Safety & Issues', href: '/dashboard/safety', icon: AlertTriangle, roles: ['admin', 'engineer'] },
-    { name: 'Complaint Inbox', href: '/dashboard/admin/complaints', icon: MessageCircleWarning, roles: ['admin', 'engineer'] },
+    { name: 'Complaint Inbox', href: '/dashboard/admin/complaints', icon: MessageCircleWarning, roles: ['admin'] },
     // Client portal items
     { name: 'My Project', href: '/dashboard/client', icon: LayoutDashboard, roles: ['client'] },
     { name: 'Site Updates', href: '/dashboard/updates', icon: MapIcon, roles: ['client'] },

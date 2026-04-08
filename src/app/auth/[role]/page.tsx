@@ -79,13 +79,28 @@ export default function AuthPage() {
 
     if (role === 'engineer') {
       if (!companyId) {
-        setError('Please enter your Company ID');
+        setError('Please enter your Security Access Key');
         setLoading(false);
         return;
       }
-      // Demo logic: Map Company ID to a functional email and use a standard password
-      loginEmail = `${companyId.toLowerCase()}@sitemaster.com`;
-      loginPassword = 'SiteMaster123!'; // Standard demo password
+      
+      // Verify the Access Key in the profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, access_key, email')
+        .eq('access_key', companyId)
+        .eq('role', 'engineer')
+        .single();
+
+      if (profileError || !profile) {
+        setError('Invalid Security Access Key. Please contact your Admin.');
+        setLoading(false);
+        return;
+      }
+
+      // If key is valid, proceed with login using the email found in the profile
+      loginEmail = profile.email || `${companyId.toLowerCase()}@sitemaster.com`;
+      loginPassword = 'SiteMaster123!'; 
     }
 
     const { error } = await supabase.auth.signInWithPassword({ 
@@ -255,14 +270,14 @@ export default function AuthPage() {
 
             {role === 'engineer' && tab === 'login' ? (
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Unique Company ID</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Security Access Key</label>
                 <div className="relative group">
                   <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-amber-400 transition-colors" />
                   <input
                     type="text"
                     value={companyId}
                     onChange={(e) => setCompanyId(e.target.value)}
-                    placeholder="e.g. SITE-2026-X"
+                    placeholder="e.g. ENG-XXXX"
                     required
                     className="w-full bg-slate-950/70 border border-slate-800 rounded-2xl py-3 pl-11 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-white/10 focus:border-slate-700 transition-all placeholder:text-slate-700 text-sm"
                   />

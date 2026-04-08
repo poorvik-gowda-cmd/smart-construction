@@ -20,7 +20,24 @@ export default function ProjectsPage() {
   useEffect(() => {
     async function fetchProjects() {
       const supabase = createClient();
-      const { data, error } = await supabase.from('projects').select('*');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      
+      let query = supabase.from('projects').select('*');
+
+      if (profile?.role === 'engineer') {
+        const { data: assignments } = await supabase
+          .from('engineer_client_assignments')
+          .select('project_id')
+          .eq('engineer_id', user.id);
+        
+        const projectIds = assignments?.map(a => a.project_id) || [];
+        query = query.in('id', projectIds);
+      }
+
+      const { data, error } = await query;
       if (data && !error) {
         setProjects(data);
       }

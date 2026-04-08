@@ -34,19 +34,36 @@ export default function SiteUpdatesPage() {
     async function fetchUpdates() {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('site_updates')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        setUpdates(data || []);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-        // Fetch this engineer's projects
-        const { data: projectData } = await supabase.from('projects').select('id, name');
-        setProjects(projectData || []);
-        if (projectData && projectData.length > 0) {
-          setSelectedProjectId(projectData[0].id);
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+
+        let query = supabase.from('site_updates').select('*');
+        let projectsQuery = supabase.from('projects').select('id, name');
+
+        if (profile?.role === 'engineer') {
+          const { data: assignments } = await supabase
+            .from('engineer_client_assignments')
+            .select('project_id')
+            .eq('engineer_id', user.id);
+          
+          const projectIds = assignments?.map(a => a.project_id) || [];
+          query = query.in('project_id', projectIds);
+          projectsQuery = projectsQuery.in('id', projectIds);
+        }
+
+        const [updatesRes, projectsRes] = await Promise.all([
+          query.order('created_at', { ascending: false }),
+          projectsQuery
+        ]);
+        
+        if (updatesRes.error) throw updatesRes.error;
+        setUpdates(updatesRes.data || []);
+        setProjects(projectsRes.data || []);
+        
+        if (projectsRes.data && projectsRes.data.length > 0) {
+          setSelectedProjectId(projectsRes.data[0].id);
         }
       } catch (error) {
         console.error('Error fetching site updates:', error);

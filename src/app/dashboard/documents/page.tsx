@@ -31,13 +31,37 @@ export default function DocumentsPage() {
     async function fetchDocs() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
+      if (!user) return;
+
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      const userRole = profile?.role;
+
+      let query = supabase.from('documents').select('*');
+
+      if (userRole === 'engineer') {
+        const { data: assignments } = await supabase
+          .from('engineer_client_assignments')
+          .select('client_id, project_id')
+          .eq('engineer_id', user.id);
+        
+        const clientIds = assignments?.map(a => a.client_id) || [];
+        const projectIds = assignments?.map(a => a.project_id) || [];
+
+        // Engineer sees: 1. Their own uploads 2. Docs shared with their clients 3. Docs in their projects
+        query = query.or(`uploaded_by.eq.${user.id},shared_with_client_id.in.(${clientIds.join(',')})`);
+      } else if (userRole === 'client') {
+        // Client sees: 1. Their own uploads 2. Docs shared specifically with them
+        query = query.or(`uploaded_by.eq.${user.id},shared_with_client_id.eq.${user.id}`);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
       if (data && !error) {
         setDocuments(data);
       }
 
       // Fetch clients assigned to this engineer (for the share selector)
-      if (user) {
+      if (userRole === 'engineer') {
         const { data: assignedClients } = await supabase
           .from('engineer_client_assignments')
           .select('client_id, client:client_id(full_name)')

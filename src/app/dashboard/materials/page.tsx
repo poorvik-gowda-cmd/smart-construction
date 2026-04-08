@@ -31,7 +31,24 @@ export default function MaterialsPage() {
   useEffect(() => {
     async function fetchMaterials() {
       const supabase = createClient();
-      const { data, error } = await supabase.from('materials').select('*');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+
+      let query = supabase.from('materials').select('*');
+
+      if (profile?.role === 'engineer') {
+        const { data: assignments } = await supabase
+          .from('engineer_client_assignments')
+          .select('project_id')
+          .eq('engineer_id', user.id);
+        
+        const projectIds = assignments?.map(a => a.project_id) || [];
+        query = query.in('project_id', projectIds);
+      }
+
+      const { data, error } = await query;
       if (data && !error) {
         setMaterials(data);
       }
@@ -78,25 +95,25 @@ export default function MaterialsPage() {
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 shadow-lg group hover:border-blue-900/50 transition-colors cursor-pointer">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 shadow-lg group hover:border-blue-900/50 transition-colors cursor-pointer">
             <div className="flex items-center justify-between">
-               <div className="p-3 rounded-xl bg-blue-600/10 text-blue-500">
-                  <Package className="w-6 h-6" />
-               </div>
-               <span className="text-[10px] font-bold text-slate-500 bg-slate-950 px-2 py-1 rounded shadow-inner uppercase tracking-widest leading-none">Total Items</span>
+              <div className="p-3 rounded-xl bg-blue-600/10 text-blue-500">
+                <Package className="w-6 h-6" />
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-950 px-2 py-1 rounded shadow-inner uppercase tracking-widest leading-none">Total Items</span>
             </div>
-            <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">1,482 <span className="text-slate-500 text-xs font-medium not-italic ml-1 uppercase">Units</span></p>
-         </div>
+            <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">{materials.reduce((acc, m) => acc + (m.stock_level || 0), 0).toLocaleString()} <span className="text-slate-500 text-xs font-medium not-italic ml-1 uppercase">Units</span></p>
+          </div>
 
-         <div className="bg-slate-900 border border-rose-900/40 p-6 rounded-2xl space-y-4 shadow-lg group hover:border-rose-900 transition-colors cursor-pointer animate-pulse-slow">
+          <div className="bg-slate-900 border border-rose-900/40 p-6 rounded-2xl space-y-4 shadow-lg group hover:border-rose-900 transition-colors cursor-pointer animate-pulse-slow">
             <div className="flex items-center justify-between">
-               <div className="p-3 rounded-xl bg-rose-600/10 text-rose-500">
-                  <AlertTriangle className="w-6 h-6" />
-               </div>
-               <span className="text-[10px] font-bold text-rose-500 bg-rose-500/5 px-2 py-1 rounded shadow-inner uppercase tracking-widest leading-none">Critical Stock</span>
+              <div className="p-3 rounded-xl bg-rose-600/10 text-rose-500">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <span className="text-[10px] font-bold text-rose-500 bg-rose-500/5 px-2 py-1 rounded shadow-inner uppercase tracking-widest leading-none">Critical Stock</span>
             </div>
-            <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">12 <span className="text-rose-500 text-xs font-medium not-italic ml-1 uppercase">Below Reorder</span></p>
-         </div>
+            <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">{materials.filter(m => (m.stock_level || 0) <= (m.reorder_point || 0)).length} <span className="text-rose-500 text-xs font-medium not-italic ml-1 uppercase">Below Reorder</span></p>
+          </div>
 
          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 shadow-lg group hover:border-emerald-900/50 transition-colors cursor-pointer">
             <div className="flex items-center justify-between">
