@@ -23,7 +23,7 @@ export default function AdminUsersPage() {
       .order('created_at', { ascending: false });
 
     if (data) {
-      setPendingClients(data.filter(u => u.role === 'client' && !u.is_approved));
+      setPendingClients(data.filter(u => u.role === 'client' && u.pending_assignment));
       setAllUsers(data);
     }
     setLoading(false);
@@ -31,7 +31,7 @@ export default function AdminUsersPage() {
 
   const roleColors: Record<string, string> = {
     admin: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-    internal: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    engineer: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     client: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   };
 
@@ -117,11 +117,11 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={cn('text-[10px] font-bold uppercase tracking-widest border px-2.5 py-1 rounded-full', roleColors[user.role] || 'bg-slate-800 text-slate-400')}>
-                        {user.role === 'internal' ? 'Engineer' : user.role}
+                        {user.role}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {user.is_approved ? (
+                      {!user.pending_assignment ? (
                         <span className="flex items-center text-emerald-400 text-xs font-bold">
                           <CheckCircle2 className="w-4 h-4 mr-1.5" /> Active
                         </span>

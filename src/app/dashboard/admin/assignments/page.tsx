@@ -31,7 +31,7 @@ export default function AdminAssignmentsPage() {
     ]);
 
     if (usersRes.data) {
-      setEngineers(usersRes.data.filter(u => u.role === 'internal'));
+      setEngineers(usersRes.data.filter(u => u.role === 'engineer'));
       setClients(usersRes.data.filter(u => u.role === 'client'));
     }
     if (projectsRes.data) setProjects(projectsRes.data);
@@ -61,10 +61,10 @@ export default function AdminAssignmentsPage() {
       return;
     }
 
-    // Approve the client
+    // Approve the client by setting pending_assignment to false
     const { error: approveError } = await supabase
       .from('profiles')
-      .update({ is_approved: true, assigned_engineer_id: selectedEngineer })
+      .update({ pending_assignment: false })
       .eq('id', selectedClient);
 
     if (approveError) {
@@ -83,7 +83,7 @@ export default function AdminAssignmentsPage() {
     if (!confirm('Remove this assignment? The client will lose access until reassigned.')) return;
     const supabase = createClient();
     await supabase.from('engineer_client_assignments').delete().eq('id', assignmentId);
-    await supabase.from('profiles').update({ is_approved: false, assigned_engineer_id: null }).eq('id', clientId);
+    await supabase.from('profiles').update({ pending_assignment: true }).eq('id', clientId);
     fetchAll();
   }
 
@@ -116,7 +116,7 @@ export default function AdminAssignmentsPage() {
               <option value="">-- Pick a client --</option>
               {clients.map(c => (
                 <option key={c.id} value={c.id}>
-                  {c.full_name || c.id.slice(0,8)} {!c.is_approved ? '⏳ Pending' : '✓ Active'}
+                  {c.full_name || c.id.slice(0,8)} {c.pending_assignment ? '⏳ Pending' : '✓ Active'}
                 </option>
               ))}
             </select>
@@ -202,7 +202,7 @@ export default function AdminAssignmentsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-500 font-mono">
-                      {new Date(a.assigned_at).toLocaleDateString()}
+                      {new Date(a.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
                       <button

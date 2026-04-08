@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         } else {
           // Profile missing — try to create it via API using metadata from signup
           const meta = user.user_metadata;
-          const inferredRole = meta?.role || 'internal';
+          const inferredRole = meta?.role || 'engineer';
           const inferredName = meta?.full_name || user.email?.split('@')[0] || 'User';
 
           try {
@@ -68,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const roleLabel: Record<UserRole, string> = {
     admin: 'Administrator',
-    internal: 'Site Engineer',
+    engineer: 'Site Engineer',
     client: 'Project Client',
   };
 

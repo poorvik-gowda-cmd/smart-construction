@@ -34,7 +34,7 @@ export default function InboxComplaintsPage() {
         .order('created_at', { ascending: false });
 
       // Admins see all; engineers see only complaints directed at them
-      if (userRole === 'internal') {
+      if (userRole === 'engineer') {
         query = query.eq('to_engineer_id', user.id);
       }
 
