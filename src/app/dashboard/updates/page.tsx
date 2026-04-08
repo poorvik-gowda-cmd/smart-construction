@@ -27,6 +27,8 @@ export default function SiteUpdatesPage() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [projects, setProjects] = useState<any[]>([]);
   const [posting, setPosting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
   const supabase = createClient();
 
@@ -51,6 +53,27 @@ export default function SiteUpdatesPage() {
           const projectIds = assignments?.map(a => a.project_id) || [];
           query = query.in('project_id', projectIds);
           projectsQuery = projectsQuery.in('id', projectIds);
+        } else if (profile?.role === 'client') {
+          // Clients see their assigned project
+          const { data: assignment } = await supabase
+            .from('engineer_client_assignments')
+            .select('project_id')
+            .eq('client_id', user.id)
+            .maybeSingle();
+          
+          if (assignment) {
+            query = query.eq('project_id', assignment.project_id);
+            projectsQuery = projectsQuery.eq('id', assignment.project_id);
+          } else {
+            // Fallback: If no assignment, check profile project_id
+            const { data: profileWithProject } = await supabase.from('profiles').select('project_id').eq('id', user.id).single();
+            if (profileWithProject?.project_id) {
+               query = query.eq('project_id', profileWithProject.project_id);
+               projectsQuery = projectsQuery.eq('id', profileWithProject.project_id);
+            } else {
+               query = query.eq('project_id', '00000000-0000-0000-0000-000000000000'); // Force empty
+            }
+          }
         }
 
         const [updatesRes, projectsRes] = await Promise.all([
@@ -74,22 +97,52 @@ export default function SiteUpdatesPage() {
     fetchUpdates();
   }, [supabase]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   const handlePostUpdate = async () => {
     if (!newNote.trim()) return;
     if (!selectedProjectId) { alert('Please select a project.'); return; }
     setPosting(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user session");
+
+      let finalImageUrl = `https://picsum.photos/seed/${Math.round(Math.random()*9999)}/600/400`;
+
+      // Upload real photo if provided
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${Math.random()}-${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('site-updates')
+          .upload(filePath, selectedFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('site-updates')
+          .getPublicUrl(filePath);
+        
+        finalImageUrl = publicUrl;
+      }
+
       const lat = 28.61 + (Math.random() - 0.5) * 0.1;
       const lng = 77.23 + (Math.random() - 0.5) * 0.1;
-      
-      const { data: { user } } = await supabase.auth.getUser();
       
       const { data, error } = await supabase
         .from('site_updates')
         .insert({
           project_id: selectedProjectId,
-          user_id: user?.id || '00000000-0000-0000-0000-000000000000',
-          image_url: `https://picsum.photos/seed/${Math.round(Math.random()*9999)}/600/400`,
+          user_id: user.id,
+          image_url: finalImageUrl,
           notes: newNote,
           latitude: lat,
           longitude: lng
@@ -101,10 +154,12 @@ export default function SiteUpdatesPage() {
       
       setUpdates([data, ...updates]);
       setNewNote('');
+      setSelectedFile(null);
+      setPreviewUrl(null);
       setShowForm(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error posting update:', error);
-      alert('Failed to post update.');
+      alert('Failed to post update: ' + error.message);
     } finally {
       setPosting(false);
     }
@@ -171,21 +226,45 @@ export default function SiteUpdatesPage() {
               </select>
             </div>
           )}
-          <textarea 
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-            placeholder="What's happening on site today? Describe the milestone..."
-            className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 min-h-[120px] mb-4"
-          />
-          <div className="flex justify-end">
-            <button 
-              onClick={handlePostUpdate}
-              disabled={posting || !newNote.trim()}
-              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 px-8 rounded-xl flex items-center transition-all"
-            >
-              {posting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
-              {posting ? 'Posting...' : 'Share Update'}
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+             <div>
+                <textarea 
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="What's happening on site today? Describe the milestone..."
+                  className="w-full h-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 min-h-[120px]"
+                />
+             </div>
+             <div className="space-y-4">
+                <div className="aspect-video bg-slate-950 border-2 border-dashed border-slate-800 rounded-2xl flex flex-col items-center justify-center overflow-hidden relative group">
+                   {previewUrl ? (
+                      <>
+                        <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <button onClick={() => {setSelectedFile(null); setPreviewUrl(null);}} className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                           <X className="w-4 h-4" />
+                        </button>
+                      </>
+                   ) : (
+                      <label className="cursor-pointer flex flex-col items-center group">
+                         <div className="p-3 rounded-full bg-blue-600/10 text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                            <Camera className="w-6 h-6" />
+                         </div>
+                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2">Clique to Upload Photo</span>
+                         <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                      </label>
+                   )}
+                </div>
+                <div className="flex justify-end">
+                  <button 
+                    onClick={handlePostUpdate}
+                    disabled={posting || !newNote.trim()}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 px-8 rounded-xl flex items-center transition-all shadow-xl shadow-blue-900/20"
+                  >
+                    {posting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
+                    {posting ? 'Uploading...' : 'Post Site Log'}
+                  </button>
+                </div>
+             </div>
           </div>
         </div>
       )}

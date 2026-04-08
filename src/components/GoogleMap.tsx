@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   APIProvider,
   Map,
+  Marker, // Add legacy Marker as fallback
   AdvancedMarker,
   InfoWindow,
   Pin,
@@ -74,20 +75,26 @@ export default function GoogleMap({ updates }: GoogleMapProps) {
           style={{ width: '100%', height: '100%' }}
         >
           {updates.map((update) => (
-            <AdvancedMarker
-              key={update.id}
-              position={{ lat: update.latitude, lng: update.longitude }}
-              onClick={() => setSelectedUpdate(update)}
-            >
-              <div className="cursor-pointer group/pin relative">
-                <div className="w-9 h-9 rounded-full bg-blue-600 border-2 border-white shadow-xl shadow-blue-900/40 flex items-center justify-center transform group-hover/pin:scale-125 transition-transform group-hover/pin:bg-blue-500">
-                  <MapPin className="w-4 h-4 text-white" />
+            /* We use AdvancedMarker only if mapId is provided, else fallback to standard Marker */
+            process.env.NEXT_PUBLIC_MAP_ID || process.env.NEXT_PUBLIC_MAP_ID === 'DEMO_MAP_ID' ? (
+              <AdvancedMarker
+                key={update.id}
+                position={{ lat: update.latitude, lng: update.longitude }}
+                onClick={() => setSelectedUpdate(update)}
+              >
+                <div className="cursor-pointer group/pin relative">
+                  <div className="w-9 h-9 rounded-full bg-blue-600 border-2 border-white shadow-xl shadow-blue-900/40 flex items-center justify-center transform group-hover/pin:scale-125 transition-transform group-hover/pin:bg-blue-500">
+                    <MapPin className="w-4 h-4 text-white" />
+                  </div>
                 </div>
-                <div className="absolute top-11 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 text-[10px] font-bold text-white px-2 py-1 rounded-lg shadow-xl opacity-0 group-hover/pin:opacity-100 whitespace-nowrap transition-opacity pointer-events-none">
-                  Update #{update.id.slice(0, 4)}
-                </div>
-              </div>
-            </AdvancedMarker>
+              </AdvancedMarker>
+            ) : (
+              <Marker
+                key={update.id}
+                position={{ lat: update.latitude, lng: update.longitude }}
+                onClick={() => setSelectedUpdate(update)}
+              />
+            )
           ))}
 
           {selectedUpdate && (

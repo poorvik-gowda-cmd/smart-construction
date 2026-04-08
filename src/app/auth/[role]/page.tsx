@@ -78,7 +78,8 @@ export default function AuthPage() {
     let loginPassword = password;
 
     if (role === 'engineer') {
-      if (!companyId) {
+      const sanitizedKey = companyId.trim().toUpperCase();
+      if (!sanitizedKey) {
         setError('Please enter your Security Access Key');
         setLoading(false);
         return;
@@ -88,18 +89,19 @@ export default function AuthPage() {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, access_key, email')
-        .eq('access_key', companyId)
+        .eq('access_key', sanitizedKey)
         .eq('role', 'engineer')
         .single();
 
       if (profileError || !profile) {
+        console.error('Profile fetch error:', profileError);
         setError('Invalid Security Access Key. Please contact your Admin.');
         setLoading(false);
         return;
       }
 
       // If key is valid, proceed with login using the email found in the profile
-      loginEmail = profile.email || `${companyId.toLowerCase()}@sitemaster.com`;
+      loginEmail = profile.email || `${sanitizedKey.toLowerCase()}@sitemaster.com`;
       loginPassword = 'SiteMaster123!'; 
     }
 
