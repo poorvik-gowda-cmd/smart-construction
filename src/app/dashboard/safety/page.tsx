@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import GoogleMap from '@/components/GoogleMap';
 import { 
   AlertTriangle, 
   Search, 
@@ -15,7 +16,6 @@ import {
   X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 
 // Realtime data fetched from safety_issues table
@@ -24,6 +24,7 @@ export default function SafetyPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [issues, setIssues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
 
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ description: '', severity: 'medium' });
@@ -60,14 +61,21 @@ export default function SafetyPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const supabase = createClient();
+    
+    // Generate mock location near site for the map
+    const lat = 28.61 + (Math.random() - 0.5) * 0.1;
+    const lng = 77.23 + (Math.random() - 0.5) * 0.1;
+
     const { data, error } = await supabase.from('safety_issues').insert([{
       description: formData.description,
       severity: formData.severity,
-      status: 'open'
+      status: 'open',
+      latitude: lat,
+      longitude: lng
     }]).select();
 
     if (data && !error) {
-       setIssues([...issues, data[0]]);
+       setIssues([data[0], ...issues]);
        setShowModal(false);
        setFormData({ description: '', severity: 'medium' });
     } else {
@@ -89,11 +97,51 @@ export default function SafetyPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Safety & Hazard Log</h1>
           <p className="text-slate-500 mt-1">Monitor site risks, report incidents, and track protocol compliance.</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="flex items-center bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-rose-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest">
-          <ShieldAlert className="w-5 h-5 mr-2" />
-          Report Incident
-        </button>
+        <div className="flex items-center space-x-4">
+          <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-2xl shadow-xl">
+             <button 
+               onClick={() => setActiveTab('list')}
+               className={cn(
+                 "px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all",
+                 activeTab === 'list' ? "bg-rose-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-200"
+               )}
+             >
+                List
+             </button>
+             <button 
+               onClick={() => setActiveTab('map')}
+               className={cn(
+                 "px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all",
+                 activeTab === 'map' ? "bg-rose-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-200"
+               )}
+             >
+                Map
+             </button>
+          </div>
+          <button onClick={() => setShowModal(true)} className="flex items-center bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-rose-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest">
+            <ShieldAlert className="w-5 h-5 mr-2" />
+            Report Incident
+          </button>
+        </div>
       </div>
+
+      {/* SAF-01: Critical Alert Banner */}
+      {issues.some(i => i.severity === 'critical' && i.status === 'open') && (
+        <div className="bg-rose-600/15 border border-rose-500/30 p-6 rounded-3xl flex items-center justify-between animate-pulse">
+           <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-900/40">
+                 <AlertTriangle className="w-7 h-7" />
+              </div>
+              <div>
+                 <h2 className="text-lg font-black text-rose-500 uppercase tracking-tighter italic">Critical Site Hazards Detected</h2>
+                 <p className="text-rose-400/80 text-xs font-bold uppercase tracking-widest leading-none">Immediate corrective action required for unresolved terminal risks.</p>
+              </div>
+           </div>
+           <div className="hidden md:block">
+              <span className="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-4 py-2 rounded-xl border border-rose-500/20 uppercase tracking-[0.3em]">Urgent Protocol Active</span>
+           </div>
+        </div>
+      )}
 
       {/* Safety Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -154,53 +202,68 @@ export default function SafetyPage() {
             </div>
          </div>
 
-         <div className="grid grid-cols-1 gap-4">
-            {issues.filter(issue => 
-               issue.description?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-               issue.project?.toLowerCase().includes(searchTerm.toLowerCase())
-            ).map((issue: any) => (
-               <div key={issue.id} className="bg-slate-900 border border-slate-800 p-5 rounded-3xl flex flex-col md:flex-row md:items-center justify-between group hover:border-slate-700 hover:shadow-xl transition-all cursor-pointer">
-                  <div className="flex items-center space-x-6 flex-1">
-                     <div className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center p-3 animate-pulse-slow",
-                        severityStyles[issue.severity as keyof typeof severityStyles]
-                     )}>
-                        <AlertTriangle className="w-full h-full" />
-                     </div>
-                     <div className="space-y-1">
-                        <div className="flex items-center space-x-3">
-                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">SITE: {issue.project}</span>
-                           <span className={cn(
-                              "text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full border tracking-tighter",
-                              issue.status === 'open' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
-                              issue.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                           )}>
-                              {issue.status.replace('_', ' ')}
-                           </span>
+         {activeTab === 'list' ? (
+            <div className="grid grid-cols-1 gap-4 text-white">
+               {issues.filter(issue => 
+                  issue.description?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                  issue.project?.toLowerCase().includes(searchTerm.toLowerCase())
+               ).map((issue: any) => (
+                  <div key={issue.id} className="bg-slate-900 border border-slate-800 p-5 rounded-3xl flex flex-col md:flex-row md:items-center justify-between group hover:border-slate-700 hover:shadow-xl transition-all cursor-pointer">
+                     <div className="flex items-center space-x-6 flex-1">
+                        <div className={cn(
+                           "w-12 h-12 rounded-2xl flex items-center justify-center p-3 animate-pulse-slow",
+                           severityStyles[issue.severity as keyof typeof severityStyles]
+                        )}>
+                           <AlertTriangle className="w-full h-full" />
                         </div>
-                        <h4 className="text-slate-100 font-bold group-hover:text-rose-400 transition-colors uppercase tracking-tight leading-tight">
-                           {issue.description}
-                        </h4>
-                        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest flex items-center">
-                           <Clock className="w-3 h-3 mr-1" /> Reported {new Date(issue.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • 2 hours ago
-                        </p>
-                     </div>
-                  </div>
-                  <div className="mt-4 md:mt-0 flex items-center space-x-6">
-                     <div className="text-right">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Assigned to</p>
-                        <div className="flex -space-x-2 self-end">
-                           <div className="w-7 h-7 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] font-extrabold text-blue-500 uppercase font-mono">HS</div>
-                           <div className="w-7 h-7 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] font-extrabold text-blue-500 uppercase font-mono">AD</div>
+                        <div className="space-y-1">
+                           <div className="flex items-center space-x-3">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">SITE: {issue.project || 'Project'}</span>
+                              <span className={cn(
+                                 "text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full border tracking-tighter",
+                                 issue.status === 'open' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
+                                 issue.status === 'in_progress' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                              )}>
+                                 {issue.status.replace('_', ' ')}
+                              </span>
+                           </div>
+                           <h4 className="text-slate-100 font-bold group-hover:text-rose-400 transition-colors uppercase tracking-tight leading-tight">
+                              {issue.description}
+                           </h4>
+                           <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest flex items-center">
+                              <Clock className="w-3 h-3 mr-1" /> Reported {new Date(issue.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                           </p>
                         </div>
                      </div>
-                     <div className="h-10 w-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center hover:bg-rose-500/10 transition-colors group/arrow">
-                        <ChevronRight className="w-5 h-5 text-slate-600 group-hover/arrow:text-rose-400 transform group-hover/arrow:translate-x-1 transition-transform" />
+                     <div className="mt-4 md:mt-0 flex items-center space-x-6">
+                        <div className="text-right">
+                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Assigned to</p>
+                           <div className="flex -space-x-2 self-end">
+                              <div className="w-7 h-7 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] font-extrabold text-blue-500 uppercase font-mono">HS</div>
+                              <div className="w-7 h-7 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] font-extrabold text-blue-500 uppercase font-mono">AD</div>
+                           </div>
+                        </div>
+                        <div className="h-10 w-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center hover:bg-rose-500/10 transition-colors group/arrow">
+                           <ChevronRight className="w-5 h-5 text-slate-600 group-hover/arrow:text-rose-400 transform group-hover/arrow:translate-x-1 transition-transform" />
+                        </div>
                      </div>
                   </div>
-               </div>
-            ))}
-         </div>
+               ))}
+            </div>
+         ) : (
+            <div className="h-[500px] w-full bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden relative">
+               <GoogleMap updates={issues.map(i => ({
+                  id: i.id,
+                  project_id: i.project_id || 'SYSTEM',
+                  latitude: i.latitude || 28.61,
+                  longitude: i.longitude || 77.23,
+                  notes: i.description,
+                  image_url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=400',
+                  created_at: i.reported_at,
+                  user_id: 'SYSTEM'
+               }))} />
+            </div>
+         )}
       </div>
 
       {/* Creation Modal */}

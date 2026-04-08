@@ -197,10 +197,23 @@ export default function DocumentsPage() {
             <div className="border-t border-white/5 pt-4 flex items-center justify-between">
               <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">{doc.uploaded}</span>
               <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="p-2 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/10" title="Preview">
+                <button 
+                  onClick={() => window.open(doc.file_url, '_blank')}
+                  className="p-2 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/10" title="Preview"
+                >
                   <Eye className="w-4 h-4" />
                 </button>
-                <button className="p-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 rounded-lg transition-colors border border-emerald-500/10" title="Download">
+                <button 
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = doc.file_url;
+                    link.download = doc.name;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="p-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 rounded-lg transition-colors border border-emerald-500/10" title="Download"
+                >
                   <Download className="w-4 h-4" />
                 </button>
                 <button className="p-2 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 rounded-lg transition-colors border border-rose-500/10" title="Delete">
