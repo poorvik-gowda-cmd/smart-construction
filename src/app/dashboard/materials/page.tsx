@@ -14,7 +14,7 @@ import {
   TableProperties,
   X
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatINR } from '@/lib/utils';
 import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 
@@ -41,12 +41,21 @@ export default function MaterialsPage() {
       let query = supabase.from('materials').select('*');
 
       if (profile?.role === 'engineer') {
-        const { data: assignments } = await supabase
+        const { data: clientAssignments } = await supabase
           .from('engineer_client_assignments')
           .select('project_id')
           .eq('engineer_id', user.id);
         
-        const projectIds = assignments?.map(a => a.project_id) || [];
+        const { data: projectAssignments } = await supabase
+          .from('project_assignments')
+          .select('project_id')
+          .eq('user_id', user.id);
+        
+        const projectIds = Array.from(new Set([
+          ...(clientAssignments?.map(a => a.project_id) || []),
+          ...(projectAssignments?.map(a => a.project_id) || [])
+        ]));
+
         query = query.in('project_id', projectIds);
 
         if (projectIds.length > 0) {
@@ -72,24 +81,31 @@ export default function MaterialsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProjectId) {
-      alert("Please select a project.");
+      alert("No project selected. Ensure you are assigned to a project.");
       return;
     }
     const supabase = createClient();
-    const { data, error } = await supabase.from('materials').insert([{
+    
+    const insertData = {
       name: formData.name,
       project_id: selectedProjectId,
       unit: formData.unit,
       stock_level: Number(formData.stock_level),
       reorder_point: Number(formData.reorder_point)
-    }]).select();
+    };
+
+    console.log('--- Material Insert Debug ---');
+    console.log('Data:', insertData);
+
+    const { data, error } = await supabase.from('materials').insert([insertData]).select();
 
     if (data && !error) {
        setMaterials([...materials, data[0]]);
        setShowModal(false);
        setFormData({ name: '', unit: 'Bags', stock_level: '', reorder_point: '' });
     } else {
-       alert("Error adding inventory.");
+       console.error("Inventory Insert Error:", error);
+       alert(`Error adding inventory: ${error?.message || "Unknown Error"}`);
     }
   };
 

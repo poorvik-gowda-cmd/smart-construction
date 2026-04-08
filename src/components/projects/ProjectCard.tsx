@@ -1,6 +1,6 @@
 import { Project } from '@/types';
-import { Calendar, DollarSign, MapPin, MoreVertical, TrendingUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Calendar, MapPin, MoreVertical, TrendingUp } from 'lucide-react';
+import { cn, formatINR } from '@/lib/utils';
 
 interface ProjectCardProps {
   project: Project;
@@ -52,11 +52,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-slate-950/50 border border-slate-800/50 rounded-xl p-3">
             <div className="flex items-center text-slate-500 mb-1">
-              <DollarSign className="w-3.5 h-3.5 mr-1" />
+              <span className="text-[10px] font-bold uppercase tracking-widest mr-1">₹</span>
               <span className="text-[10px] font-bold uppercase tracking-widest">Budget</span>
             </div>
             <p className="text-sm font-bold text-slate-200">
-              ${(project.budget / 1000000).toFixed(1)}M
+              {formatINR(project.budget, true)}
             </p>
           </div>
           <div className="bg-slate-950/50 border border-slate-800/50 rounded-xl p-3">

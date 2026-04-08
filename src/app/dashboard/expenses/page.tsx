@@ -27,7 +27,7 @@ import {
   PieChart,
   Pie
 } from 'recharts';
-import { cn } from '@/lib/utils';
+import { cn, formatINR } from '@/lib/utils';
 import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 
@@ -167,7 +167,7 @@ export default function ExpensesPage() {
                </div>
             </div>
             <div>
-               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">${totalBudget.toLocaleString()}</p>
+               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">{formatINR(totalBudget)}</p>
                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Assigned Project Budget</p>
             </div>
          </div>
@@ -183,7 +183,7 @@ export default function ExpensesPage() {
                </div>
             </div>
             <div>
-               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">${(totalBudget - totalSpent).toLocaleString()}</p>
+               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">{formatINR(totalBudget - totalSpent)}</p>
                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Budget Variance</p>
             </div>
          </div>
@@ -196,7 +196,7 @@ export default function ExpensesPage() {
                <span className="text-[10px] font-bold text-slate-500 bg-slate-950 px-2.5 py-1 rounded uppercase tracking-widest leading-none border border-white/5">Real-time</span>
             </div>
             <div>
-               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">${totalSpent.toLocaleString()}</p>
+               <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">{formatINR(totalSpent)}</p>
                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Actual Expenditure</p>
             </div>
          </div>
@@ -236,7 +236,7 @@ export default function ExpensesPage() {
                   <div key={item.name} className="flex flex-col items-center p-2 rounded-xl hover:bg-slate-800/50 transition-all cursor-default">
                      <div className="w-1.5 h-1.5 rounded-full mb-1" style={{ backgroundColor: item.color }} />
                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{item.name}</p>
-                     <p className="text-xs font-extrabold text-slate-100">${(item.value / 1000).toFixed(0)}k</p>
+                     <p className="text-xs font-extrabold text-slate-100">{formatINR(item.value, true)}</p>
                   </div>
                ))}
             </div>
@@ -264,7 +264,7 @@ export default function ExpensesPage() {
                        fontSize={10} 
                        tickLine={false} 
                        axisLine={false} 
-                       tickFormatter={(value) => `$${value/1000}k`}
+                       tickFormatter={(value) => formatINR(value, true)}
                        fontFamily="JetBrains Mono"
                      />
                      <Tooltip 
@@ -338,7 +338,7 @@ export default function ExpensesPage() {
                         </div>
                       </td>
                       <td className="px-6 py-5 text-right font-mono italic">
-                        <span className="text-sm font-bold text-slate-100">${(Number(t.amount) || 0).toLocaleString()}</span>
+                        <span className="text-sm font-bold text-slate-100">{formatINR(Number(t.amount) || 0)}</span>
                       </td>
                     </tr>
                   ))}
@@ -359,8 +359,8 @@ export default function ExpensesPage() {
             </div>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amount ($)</label>
-                <input required type="number" step="0.01" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="1500.00" />
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amount (₹)</label>
+                <input required type="number" step="1" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="1500" />
               </div>
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category</label>

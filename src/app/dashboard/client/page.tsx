@@ -8,7 +8,7 @@ import {
   Users, Package, ShieldAlert, Lock
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { cn } from '@/lib/utils';
+import { cn, formatINR } from '@/lib/utils';
 
 export default function ClientPage() {
   const [loading, setLoading] = useState(true);
@@ -202,7 +202,7 @@ export default function ClientPage() {
             <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest bg-blue-500/5 px-2 py-1 rounded border border-blue-500/10">Budget</span>
           </div>
           <div>
-            <p className="text-3xl font-extrabold text-white">${(project?.budget || 0).toLocaleString()}</p>
+            <p className="text-3xl font-extrabold text-white">{formatINR(project?.budget || 0)}</p>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Total Project Budget</p>
           </div>
         </div>

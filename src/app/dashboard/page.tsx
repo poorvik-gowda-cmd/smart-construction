@@ -29,7 +29,7 @@ import {
   Cell
 } from 'recharts';
 import { createClient } from '@/lib/supabase';
-import { cn } from '@/lib/utils';
+import { cn, formatINR } from '@/lib/utils';
 import { AIRiskResult } from '@/types';
 
 
@@ -189,7 +189,7 @@ export default function DashboardPage() {
           // Admin sees Total Budget instead of project-specific stock/safety
           currentStats.push({ 
             name: 'Total Ops Budget', 
-            value: `$${(totalBudget / 1000000).toFixed(1)}M`, 
+            value: formatINR(totalBudget, true), 
             icon: DollarSign, 
             change: `${budgetUtilized}% utilized`, 
             changeType: budgetUtilized < 90 ? 'increase' : 'decrease', 
@@ -267,12 +267,9 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center space-x-3">
           <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 flex items-center space-x-3 shadow-md">
-            <Calendar className="w-5 h-5 text-blue-500" />
-            <span className="text-sm font-medium text-slate-300">April 7, 2026</span>
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">{role === 'client' ? 'Site Online' : 'System Secure'}</span>
           </div>
-          <button className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-xl shadow-lg shadow-blue-900/20 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-wider">
-            Add Update
-          </button>
         </div>
       </div>
 
