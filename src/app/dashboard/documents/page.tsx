@@ -98,8 +98,7 @@ export default function DocumentsPage() {
         const { data: urlData } = supabase.storage.from('documents').getPublicUrl(filePath);
         fileUrl = urlData.publicUrl;
       } else {
-        // Fallback: use a placeholder URL if storage isn't configured
-        fileUrl = `#${filePath}`;
+        throw new Error('Supabase Storage error: ' + storageError.message);
       }
 
       // Save document record to DB
@@ -121,9 +120,9 @@ export default function DocumentsPage() {
       setShowModal(false);
       setFormData({ name: '', file_type: 'PDF', shared_with_client_id: '' });
       setSelectedFile(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
-      alert('Upload failed. Make sure Supabase Storage bucket "documents" exists.');
+      alert(error.message || 'Upload failed. Ensure bucket "documents" is Public.');
     } finally {
       setUploading(false);
     }

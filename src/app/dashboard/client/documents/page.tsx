@@ -60,7 +60,7 @@ export default function ClientDocumentsPage() {
         const { data: urlData } = supabase.storage.from('documents').getPublicUrl(filePath);
         fileUrl = urlData.publicUrl;
       } else {
-        fileUrl = `#${filePath}`;
+        throw new Error('Supabase Storage error: ' + storageError.message);
       }
 
       const { data, error: dbError } = await supabase.from('documents').insert([{
@@ -75,8 +75,9 @@ export default function ClientDocumentsPage() {
       setShowModal(false);
       setFormData({ name: '', file_type: 'PDF' });
       setSelectedFile(null);
-    } catch (err) {
-      alert('Upload failed.');
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      alert(err.message || 'Upload failed. Ensure bucket "documents" is Public.');
     } finally {
       setUploading(false);
     }
