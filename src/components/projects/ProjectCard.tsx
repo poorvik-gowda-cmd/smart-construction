@@ -1,6 +1,7 @@
 import { Project } from '@/types';
 import { Calendar, MapPin, MoreVertical, TrendingUp } from 'lucide-react';
 import { cn, formatINR } from '@/lib/utils';
+import Link from 'next/link';
 
 interface ProjectCardProps {
   project: Project;
@@ -20,9 +21,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors tracking-tight">
-              {project.name}
-            </h3>
+            <Link href={`/dashboard/projects/${project.id}`}>
+              <h3 className="text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors tracking-tight cursor-pointer">
+                {project.name}
+              </h3>
+            </Link>
             <div className="flex items-center text-xs text-slate-500 space-x-2">
               <MapPin className="w-3 h-3" />
               <span>Project ID: {project.id.slice(0, 8)}</span>
@@ -73,7 +76,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         <div className="flex items-center justify-between">
           <span className={cn(
             "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
-            statusColors[project.status]
+            statusColors[project.status as keyof typeof statusColors]
           )}>
             {project.status.replace('_', ' ')}
           </span>
@@ -96,9 +99,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
            <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
            On Track
          </div>
-         <button className="text-blue-400 hover:text-blue-300 text-xs font-bold uppercase tracking-widest transition-colors">
-           Manage
-         </button>
+         <Link href={`/dashboard/projects/${project.id}`}>
+           <button className="text-blue-400 hover:text-blue-300 text-xs font-bold uppercase tracking-widest transition-colors">
+             Manage
+           </button>
+         </Link>
       </div>
     </div>
   );

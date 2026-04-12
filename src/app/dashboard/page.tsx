@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import DashboardStats from '@/components/DashboardStats';
 import AIInsightCard from '@/components/AIInsightCard';
 import { 
@@ -423,9 +424,11 @@ export default function DashboardPage() {
                       </span>
                    </div>
                    <div className="flex items-center space-x-3">
-                      <div className="flex items-center text-[10px] font-extrabold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded uppercase tracking-widest border border-blue-500/20">
-                         {update.project?.name || 'Unknown Project'}
-                      </div>
+                      <Link href={`/dashboard/projects/${update.project_id}`}>
+                        <div className="flex items-center text-[10px] font-extrabold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded uppercase tracking-widest border border-blue-500/20 hover:bg-blue-500 hover:text-white transition-all cursor-pointer">
+                           {update.project?.name || 'Unknown Project'}
+                        </div>
+                      </Link>
                       <div className="flex items-center text-[10px] font-bold text-slate-400 italic">
                          by <span className="text-slate-200 ml-1 not-italic font-bold">{update.author?.full_name || 'System'}</span> 
                          <span className="ml-1 text-[9px] text-slate-600">({update.author?.role || 'uploader'})</span>
