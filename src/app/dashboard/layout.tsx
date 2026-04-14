@@ -7,8 +7,11 @@ import { Bell, Search, User, Menu, X, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const [role, setRole] = useState<UserRole | null>(null);
   const [fullName, setFullName] = useState('User');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -113,7 +116,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">Loading Secure Workspace...</p>
+          <p className="text-slate-500 text-sm font-bold uppercase tracking-widest">{t('Loading Secure Workspace...')}</p>
         </div>
       </div>
     );
@@ -162,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
               <input
                 type="text"
-                placeholder="Search projects, materials, or updates..."
+                placeholder={t('Search projects, materials, or updates...')}
                 className="w-full bg-slate-900/50 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-slate-900 transition-all placeholder:text-slate-600"
               />
             </div>
@@ -181,7 +184,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="flex items-center space-x-3 group">
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-bold text-slate-100 capitalize">{fullName}</p>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">{roleLabel[role]}</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">{t(roleLabel[role])}</p>
                 </div>
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 p-0.5 shadow-lg shadow-blue-900/20">
                   <div className="w-full h-full rounded-[10px] bg-slate-900 flex items-center justify-center">
@@ -192,17 +195,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               <div className="h-10 w-px bg-slate-800 hidden md:block" />
 
-              <div className="hidden md:flex items-center space-x-2">
+              <div className="hidden md:flex items-center space-x-3">
+                <LanguageSwitcher />
+                <div className="h-10 w-px bg-slate-800" />
                 <button 
                   onClick={() => router.push('/')}
                   className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-white hover:border-slate-700 transition-all"
                 >
-                  Switch Portal
+                  {t('Switch Portal')}
                 </button>
                 <button 
                   onClick={handleLogout}
                   className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-lg shadow-rose-900/10"
-                  title="Logout"
+                  title={t('Logout')}
                 >
                   <LogOut className="h-4 w-4" />
                 </button>

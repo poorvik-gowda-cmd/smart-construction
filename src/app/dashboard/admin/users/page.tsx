@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
-import { Users, Clock, CheckCircle2, UserCog, Mail, ShieldCheck, Loader2 } from 'lucide-react';
+import { Users, Clock, CheckCircle2, UserCog, Mail, ShieldCheck, Loader2, AlertCircle, XCircle, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function AdminUsersPage() {
@@ -27,6 +27,31 @@ export default function AdminUsersPage() {
       setAllUsers(data);
     }
     setLoading(false);
+  }
+
+  async function handleStatusUpdate(userId: string, status: 'approved' | 'recheck' | 'rejected') {
+    const supabase = createClient();
+    let updates: any = {};
+    
+    if (status === 'approved') {
+      updates = { pending_assignment: false, is_approved: true };
+    } else if (status === 'recheck') {
+      updates = { pending_assignment: true, is_approved: false };
+      // Note: Ideally we add a recheck_reason column, but for now we use status logic
+    } else if (status === 'rejected') {
+      updates = { pending_assignment: false, is_approved: false };
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId);
+
+    if (error) {
+      alert(`Error updating status: ${error.message}`);
+    } else {
+      fetchUsers();
+    }
   }
 
   const roleColors: Record<string, string> = {
@@ -67,12 +92,30 @@ export default function AdminUsersPage() {
                   </div>
                 </div>
                 <p className="text-[10px] text-slate-600 font-mono">{client.id}</p>
-                <a
-                  href="/dashboard/admin/assignments"
-                  className="block w-full text-center bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 font-bold py-2 rounded-xl text-xs uppercase tracking-widest transition-all"
-                >
-                  Assign Engineer →
-                </a>
+                
+                <div className="flex flex-col space-y-2">
+                  <a
+                    href={`/dashboard/admin/assignments?clientId=${client.id}`}
+                    className="flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl text-[10px] uppercase tracking-widest transition-all"
+                  >
+                    <UserCheck className="w-3 h-3 mr-2" /> Assign Engineer
+                  </a>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => handleStatusUpdate(client.id, 'recheck')}
+                      className="flex items-center justify-center bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 font-bold py-2 rounded-xl text-[9px] uppercase tracking-tighter transition-all"
+                    >
+                      <AlertCircle className="w-3 h-3 mr-1" /> Recheck
+                    </button>
+                    <button
+                      onClick={() => handleStatusUpdate(client.id, 'rejected')}
+                      className="flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 font-bold py-2 rounded-xl text-[9px] uppercase tracking-tighter transition-all"
+                    >
+                      <XCircle className="w-3 h-3 mr-1" /> Reject
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

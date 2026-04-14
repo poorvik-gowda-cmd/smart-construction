@@ -23,6 +23,8 @@ import {
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/types';
 
+import { useLanguage } from '@/context/LanguageContext';
+
 interface SidebarProps {
   role: UserRole;
   onLogout?: () => void;
@@ -30,27 +32,28 @@ interface SidebarProps {
 
 export default function Sidebar({ role, onLogout }: SidebarProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   const navigation = [
     // Admin-only management
-    { name: 'User Management', href: '/dashboard/admin/users', icon: UserCog, roles: ['admin'] },
-    { name: 'Assignments', href: '/dashboard/admin/assignments', icon: Link2, roles: ['admin'] },
-    { name: 'Overview', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'engineer', 'client'] },
-    { name: 'Projects', href: '/dashboard/projects', icon: BarChart3, roles: ['admin', 'engineer'] },
-    { name: 'Labor', href: '/dashboard/labor', icon: Users, roles: ['admin', 'engineer'] },
-    { name: 'Attendance', href: '/dashboard/attendance', icon: HardHat, roles: ['admin', 'engineer'] },
-    { name: 'Materials', href: '/dashboard/materials', icon: Package, roles: ['admin', 'engineer'] },
-    { name: 'Suppliers', href: '/dashboard/suppliers', icon: Truck, roles: ['admin', 'engineer'] },
-    { name: 'Expenses', href: '/dashboard/expenses', icon: CreditCard, roles: ['admin', 'engineer'] },
-    { name: 'Site Updates', href: '/dashboard/updates', icon: MapIcon, roles: ['admin', 'engineer'] },
-    { name: 'Documents', href: '/dashboard/documents', icon: Files, roles: ['admin', 'engineer'] },
-    { name: 'Safety & Issues', href: '/dashboard/safety', icon: AlertTriangle, roles: ['admin', 'engineer'] },
-    { name: 'Complaint Inbox', href: '/dashboard/admin/complaints', icon: MessageCircleWarning, roles: ['admin'] },
+    { name: t('User Management'), href: '/dashboard/admin/users', icon: UserCog, roles: ['admin'] },
+    { name: t('Assignments'), href: '/dashboard/admin/assignments', icon: Link2, roles: ['admin'] },
+    { name: t('Overview'), href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'engineer', 'client'] },
+    { name: t('Projects'), href: '/dashboard/projects', icon: BarChart3, roles: ['admin', 'engineer'] },
+    { name: t('Labor'), href: '/dashboard/labor', icon: Users, roles: ['admin', 'engineer'] },
+    { name: t('Attendance'), href: '/dashboard/attendance', icon: HardHat, roles: ['admin', 'engineer'] },
+    { name: t('Materials'), href: '/dashboard/materials', icon: Package, roles: ['admin', 'engineer'] },
+    { name: t('Suppliers'), href: '/dashboard/suppliers', icon: Truck, roles: ['admin', 'engineer'] },
+    { name: t('Expenses'), href: '/dashboard/expenses', icon: CreditCard, roles: ['admin', 'engineer'] },
+    { name: t('Site Updates'), href: '/dashboard/updates', icon: MapIcon, roles: ['admin', 'engineer'] },
+    { name: t('Documents'), href: '/dashboard/documents', icon: Files, roles: ['admin', 'engineer'] },
+    { name: t('Safety & Issues'), href: '/dashboard/safety', icon: AlertTriangle, roles: ['admin', 'engineer'] },
+    { name: t('Complaint Inbox'), href: '/dashboard/admin/complaints', icon: MessageCircleWarning, roles: ['admin'] },
     // Client portal items
-    { name: 'My Project', href: '/dashboard/client', icon: LayoutDashboard, roles: ['client'] },
-    { name: 'Site Updates', href: '/dashboard/updates', icon: MapIcon, roles: ['client'] },
-    { name: 'Documents', href: '/dashboard/client/documents', icon: Files, roles: ['client'] },
-    { name: 'Complaints', href: '/dashboard/complaints', icon: MessageCircleWarning, roles: ['client'] },
+    { name: t('My Project'), href: '/dashboard/client', icon: LayoutDashboard, roles: ['client'] },
+    { name: t('Site Updates'), href: '/dashboard/updates', icon: MapIcon, roles: ['client'] },
+    { name: t('Documents'), href: '/dashboard/client/documents', icon: Files, roles: ['client'] },
+    { name: t('Complaints'), href: '/dashboard/complaints', icon: MessageCircleWarning, roles: ['client'] },
   ];
 
   const filteredNav = navigation.filter(item => item.roles.includes(role));
@@ -71,7 +74,7 @@ export default function Sidebar({ role, onLogout }: SidebarProps) {
           const isActive = pathname === item.href;
           return (
             <Link
-              key={item.name}
+              key={item.href}
               href={item.href}
               className={cn(
                 "flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group",
@@ -96,7 +99,7 @@ export default function Sidebar({ role, onLogout }: SidebarProps) {
           className="flex items-center w-full px-4 py-3 text-sm font-bold text-slate-100 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500 hover:text-white rounded-xl transition-all duration-200 group, shadow-lg shadow-rose-900/10"
         >
           <LogOut className="mr-3 h-5 w-5 transition-transform duration-200 group-hover:-translate-x-1" />
-          Logout
+          {t('Logout')}
         </button>
       </div>
     </div>

@@ -19,6 +19,13 @@ export default function AdminAssignmentsPage() {
 
   useEffect(() => {
     fetchAll();
+    
+    // Check for clientId in URL to pre-select for assign-and-approve flow
+    const params = new URLSearchParams(window.location.search);
+    const clientId = params.get('clientId');
+    if (clientId) {
+      setSelectedClient(clientId);
+    }
   }, []);
 
   async function fetchAll() {

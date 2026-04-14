@@ -12,38 +12,40 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function AdminPortalPage() {
+  const { t } = useLanguage();
   const adminSections = [
     {
-      title: 'User Management',
-      description: 'Manage platform access, approve new clients, and oversee security roles.',
+      title: t('User Management'),
+      description: t('Manage platform access, approve new clients, and oversee security roles.'),
       href: '/dashboard/admin/users',
       icon: UserCog,
       color: 'text-blue-400',
       bgColor: 'bg-blue-500/10',
       borderColor: 'border-blue-500/20',
-      stats: 'Approve & Edit'
+      stats: t('Approve & Edit')
     },
     {
-      title: 'Project Assignments',
-      description: 'Link clients to specific engineers and projects to enable their dashboard access.',
+      title: t('Project Assignments'),
+      description: t('Link clients to specific engineers and projects to enable their dashboard access.'),
       href: '/dashboard/admin/assignments',
       icon: Link2,
       color: 'text-emerald-400',
       bgColor: 'bg-emerald-500/10',
       borderColor: 'border-emerald-500/20',
-      stats: 'Map Clients'
+      stats: t('Map Clients')
     },
     {
-      title: 'Complaint Inbox',
-      description: 'Monitor and resolve client complaints and safety concerns across all active sites.',
+      title: t('Complaint Inbox'),
+      description: t('Monitor and resolve client complaints and safety concerns across all active sites.'),
       href: '/dashboard/admin/complaints',
       icon: MessageCircleWarning,
       color: 'text-rose-400',
       bgColor: 'bg-rose-500/10',
       borderColor: 'border-rose-500/20',
-      stats: 'Global Inbox'
+      stats: t('Global Inbox')
     }
   ];
 
@@ -58,26 +60,26 @@ export default function AdminPortalPage() {
           <div className="max-w-xl">
             <div className="flex items-center space-x-2 text-blue-400 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">
               <ShieldCheck className="w-4 h-4" />
-              <span>Administrative Command Center</span>
+              <span>{t('Administrative Command Center')}</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-none mb-6">
-              Platform <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">Governance</span>
+              {t('Platform')} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">{t('Governance')}</span>
             </h1>
             <p className="text-slate-400 text-lg leading-relaxed font-medium">
-              Oversee the entire SiteMaster ecosystem. Manage user lifecycles, handle global feedback, and ensure projects are correctly assigned to your field engineers.
+              {t('Oversee the entire SiteMaster ecosystem. Manage user lifecycles, handle global feedback, and ensure projects are correctly assigned to your field engineers.')}
             </p>
           </div>
           
           <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
             <div className="bg-white/[0.03] backdrop-blur-md border border-white/5 p-6 rounded-3xl">
               <Users className="w-6 h-6 text-blue-500 mb-2" />
-              <p className="text-2xl font-black text-white">Active</p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">User Base</p>
+              <p className="text-2xl font-black text-white">{t('Active')}</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('User Base')}</p>
             </div>
             <div className="bg-white/[0.03] backdrop-blur-md border border-white/5 p-6 rounded-3xl">
               <Activity className="w-6 h-6 text-emerald-500 mb-2" />
               <p className="text-2xl font-black text-white">100%</p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">System Health</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('System Health')}</p>
             </div>
           </div>
         </div>
@@ -110,7 +112,7 @@ export default function AdminPortalPage() {
             </div>
 
             <div className="mt-8 flex items-center text-xs font-black text-blue-500 uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-500">
-              Open Portal <ArrowRight className="ml-2 w-4 h-4" />
+              {t('Open Portal')} <ArrowRight className="ml-2 w-4 h-4" />
             </div>
           </Link>
         ))}
@@ -123,12 +125,12 @@ export default function AdminPortalPage() {
             <ShieldCheck className="w-6 h-6 text-blue-400" />
           </div>
           <div>
-            <h4 className="text-white font-bold">Admin Privileges Active</h4>
-            <p className="text-slate-400 text-sm">You have full access to global database objects, AI configuration, and user overrides.</p>
+            <h4 className="text-white font-bold">{t('Admin Privileges Active')}</h4>
+            <p className="text-slate-400 text-sm">{t('You have full access to global database objects, AI configuration, and user overrides.')}</p>
           </div>
         </div>
         <button className="hidden md:block px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all">
-          View Audit Logs
+          {t('View Audit Logs')}
         </button>
       </div>
     </div>

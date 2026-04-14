@@ -32,9 +32,11 @@ import {
 import { createClient } from '@/lib/supabase';
 import { cn, formatINR } from '@/lib/utils';
 import { AIRiskResult } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 
 export default function DashboardPage() {
+  const { t } = useLanguage();
   const [aiData, setAiData] = useState<AIRiskResult | undefined>(undefined);
   const [loadingAI, setLoadingAI] = useState(true);
   const [stats, setStats] = useState<{
@@ -45,10 +47,10 @@ export default function DashboardPage() {
     changeType: 'increase' | 'decrease' | 'neutral';
     color?: string;
   }[]>([
-    { name: 'Active Projects', value: 0, icon: BarChart3, change: '-', changeType: 'neutral' },
-    { name: 'Total Labor', value: 0, icon: Users, change: '-', changeType: 'neutral' },
-    { name: 'Material Stock', value: '0%', icon: Package, change: '-', changeType: 'neutral', color: 'bg-amber-500/10' },
-    { name: 'Safety Incidents', value: 0, icon: AlertTriangle, change: '-', changeType: 'neutral', color: 'bg-emerald-500/10' },
+    { name: t('Active Projects'), value: 0, icon: BarChart3, change: '-', changeType: 'neutral' },
+    { name: t('Total Labor'), value: 0, icon: Users, change: '-', changeType: 'neutral' },
+    { name: t('Material Stock'), value: '0%', icon: Package, change: '-', changeType: 'neutral', color: 'bg-amber-500/10' },
+    { name: t('Safety Incidents'), value: 0, icon: AlertTriangle, change: '-', changeType: 'neutral', color: 'bg-emerald-500/10' },
   ]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [projectProgress, setProjectProgress] = useState<any[]>([]);
@@ -263,13 +265,13 @@ export default function DashboardPage() {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">{role === 'client' ? 'Site Overview' : 'Project Overview'}</h1>
-          <p className="text-slate-400 mt-1">{role === 'admin' ? 'Global Control Center' : 'Real-time project monitoring.'}</p>
+          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">{role === 'client' ? t('Site Overview') : t('Project Overview')}</h1>
+          <p className="text-slate-400 mt-1">{role === 'admin' ? t('Global Control Center') : t('Real-time project monitoring.')}</p>
         </div>
         <div className="flex items-center space-x-3">
           <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 flex items-center space-x-3 shadow-md">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">{role === 'client' ? 'Site Online' : 'System Secure'}</span>
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">{role === 'client' ? t('Site Online') : t('System Secure')}</span>
           </div>
         </div>
       </div>
@@ -286,41 +288,41 @@ export default function DashboardPage() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
             <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
-              Critical Alerts
+              {t('Critical Alerts')}
             </h3>
             <div className="space-y-4">
-              {stats.find(s => s.name === 'Material Stock')?.change?.includes('low') && (
+              {stats.find(s => s.name === t('Material Stock'))?.change?.includes('low') && (
                 <div className="flex items-start space-x-3 p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl group transition-all hover:bg-amber-500/10 cursor-pointer">
                   <Package className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-slate-100 group-hover:text-amber-400 transition-colors">Low Inventory</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Critical material shortage detected on your site.</p>
+                    <p className="text-sm font-bold text-slate-100 group-hover:text-amber-400 transition-colors">{t('Low Inventory')}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{t('Critical material shortage detected on your site.')}</p>
                   </div>
                 </div>
               )}
-              {stats.find(s => s.name === 'Safety Incidents')?.value as number > 0 && (
+              {stats.find(s => s.name === t('Safety Incidents'))?.value as number > 0 && (
                 <div className="flex items-start space-x-3 p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl group transition-all hover:bg-rose-500/10 cursor-pointer">
                   <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors">Safety Issue</p>
-                    <p className="text-xs text-slate-500 mt-0.5">An active safety incident requires your attention.</p>
+                    <p className="text-sm font-bold text-slate-100 group-hover:text-rose-400 transition-colors">{t('Safety Issue')}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{t('An active safety incident requires your attention.')}</p>
                   </div>
                 </div>
               )}
-              {stats.find(s => s.name === 'Total Labor')?.change?.includes('low') && (
+              {stats.find(s => s.name === t('Total Labor'))?.change?.includes('low') && (
                 <div className="flex items-start space-x-3 p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl group transition-all hover:bg-blue-500/10 cursor-pointer">
                   <Clock className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-slate-100 group-hover:text-blue-400 transition-colors">Labor Shortage</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Wait times increasing due to low attendance today.</p>
+                    <p className="text-sm font-bold text-slate-100 group-hover:text-blue-400 transition-colors">{t('Labor Shortage')}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{t('Wait times increasing due to low attendance today.')}</p>
                   </div>
                 </div>
               )}
-              {!(stats.find(s => s.name === 'Material Stock')?.change?.includes('low')) && 
-                !(stats.find(s => s.name === 'Safety Incidents')?.value as number > 0) && (
+              {!(stats.find(s => s.name === t('Material Stock'))?.change?.includes('low')) && 
+                !(stats.find(s => s.name === t('Safety Incidents'))?.value as number > 0) && (
                 <div className="py-8 text-center">
                   <Clock className="w-8 h-8 text-slate-700 mx-auto mb-2" />
-                  <p className="text-xs text-slate-500">No critical alerts for your projects today.</p>
+                  <p className="text-xs text-slate-500">{t('No critical alerts for your projects today.')}</p>
                 </div>
               )}
             </div>
@@ -329,10 +331,10 @@ export default function DashboardPage() {
 
         <div className={cn("bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl", role === 'admin' ? "lg:col-span-3" : "lg:col-span-2")}>
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-bold text-slate-100">Project Performance Trend</h3>
+            <h3 className="text-xl font-bold text-slate-100">{t('Project Performance Trend')}</h3>
             <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-slate-500">
-              <span className="flex items-center before:content-[''] before:inline-block before:w-2 before:h-2 before:bg-blue-500 before:mr-1 before:rounded-full">Actual</span>
-              <span className="flex items-center before:content-[''] before:inline-block before:w-2 before:h-2 before:bg-slate-700 before:mr-1 before:rounded-full">Target</span>
+              <span className="flex items-center before:content-[''] before:inline-block before:w-2 before:h-2 before:bg-blue-500 before:mr-1 before:rounded-full">{t('Actual')}</span>
+              <span className="flex items-center before:content-[''] before:inline-block before:w-2 before:h-2 before:bg-slate-700 before:mr-1 before:rounded-full">{t('Target')}</span>
             </div>
           </div>
           <div className="h-[350px] w-full">
@@ -363,7 +365,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {role !== 'admin' && (
           <div className="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
-            <h3 className="text-xl font-bold text-slate-100 mb-6 font-mono tracking-tighter uppercase italic text-blue-500">Project Resources</h3>
+            <h3 className="text-xl font-bold text-slate-100 mb-6 font-mono tracking-tighter uppercase italic text-blue-500">{t('Project Resources')}</h3>
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -403,11 +405,11 @@ export default function DashboardPage() {
         <div className={cn("bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl min-h-[400px]", role === 'admin' ? "lg:col-span-3" : "lg:col-span-2")}>
           <div className="p-6 border-b border-white/5 flex items-center justify-between">
              <h3 className="text-xl font-bold text-slate-100 uppercase tracking-widest italic group-hover:text-blue-400 transition-colors">
-               {role === 'admin' ? 'Global Site Activity' : 'Your Site Activity'}
+               {role === 'admin' ? t('Global Site Activity') : t('Your Site Activity')}
              </h3>
              <div className="flex items-center space-x-4">
-               <span className="text-[10px] font-bold text-slate-500 bg-slate-800 px-2 py-1 rounded italic uppercase tracking-widest border border-white/5">Real-time Feed</span>
-               <button className="text-xs font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300">View Map</button>
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-800 px-2 py-1 rounded italic uppercase tracking-widest border border-white/5">{t('Real-time Feed')}</span>
+                <button className="text-xs font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300">{t('View Map')}</button>
              </div>
           </div>
           <div className="p-0 overflow-y-auto max-h-[500px] scrollbar-hide pb-20">

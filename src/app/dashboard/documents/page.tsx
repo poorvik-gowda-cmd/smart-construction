@@ -248,6 +248,7 @@ export default function DocumentsPage() {
                   <option value="XLSX">XLSX (Spreadsheet)</option>
                   <option value="ZIP">ZIP (Archive)</option>
                   <option value="IMG">Image</option>
+                  <option value="QUOTATION">Quotation</option>
                 </select>
               </div>
               <div>
