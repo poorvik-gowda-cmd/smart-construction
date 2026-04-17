@@ -5,15 +5,19 @@ import { createClient } from '@/lib/supabase';
 import {
   BarChart3, MapPin, FileText, MessageSquare, Calendar, TrendingUp,
   Camera, ChevronRight, CheckCircle2, Clock, AlertCircle, Loader2,
-  Users, Package, ShieldAlert, Lock, UserCog
+  Users, Package, ShieldAlert, Lock, UserCog, QrCode, X, CreditCard
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn, formatINR } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
 
 export default function ClientPage() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedQuotation, setSelectedQuotation] = useState<any>(null);
+  const [isPaying, setIsPaying] = useState(false);
   // ... rest of state ...
   const [assignment, setAssignment] = useState<any>(null); // engineer_client_assignments row
   const [project, setProject] = useState<any>(null);
@@ -113,6 +117,34 @@ export default function ClientPage() {
 
     loadClientDashboard();
   }, []);
+
+  const handleMockPayment = async () => {
+    if (!selectedQuotation) return;
+    setIsPaying(true);
+    
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('documents')
+        .update({ payment_status: 'PAID' })
+        .eq('id', selectedQuotation.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setDocuments(documents.map(d => d.id === selectedQuotation.id ? { ...d, payment_status: 'PAID' } : d));
+      
+      // Delay for success animation
+      await new Promise(r => setTimeout(r, 1500));
+      setShowPaymentModal(false);
+      setSelectedQuotation(null);
+    } catch (err) {
+      console.error('Payment error:', err);
+      alert('Payment failed. Please try again.');
+    } finally {
+      setIsPaying(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -311,8 +343,32 @@ export default function ClientPage() {
                     <p className="text-[10px] text-slate-600 uppercase tracking-widest font-bold mt-0.5">{new Date(doc.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
-                <div className="flex items-center text-xs font-bold text-emerald-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                  View & Accept <ChevronRight className="ml-2 w-4 h-4" />
+                <div className="flex items-center space-x-3">
+                  {doc.payment_qr_url && (
+                    <span className={cn(
+                      "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border",
+                      doc.payment_status === 'PAID' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                    )}>
+                      {doc.payment_status === 'PAID' ? t('Paid') : t('Awaiting Payment')}
+                    </span>
+                  )}
+                  {doc.payment_qr_url && doc.payment_status !== 'PAID' ? (
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setSelectedQuotation(doc);
+                        setShowPaymentModal(true);
+                      }}
+                      className="flex items-center bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-900/20 active:scale-95"
+                    >
+                      <QrCode className="w-3 h-3 mr-2" />
+                      {t('Pay Now')}
+                    </button>
+                  ) : (
+                    <div className="flex items-center text-xs font-bold text-emerald-500 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                      {t('View Quotation')} <ChevronRight className="ml-2 w-4 h-4" />
+                    </div>
+                  )}
                 </div>
               </a>
             ))}
@@ -382,6 +438,73 @@ export default function ClientPage() {
         <div className="py-16 text-center space-y-3">
           <Camera className="w-12 h-12 text-slate-700 mx-auto" />
           <p className="text-slate-500 font-medium">{t('Your engineer hasn\'t posted any updates yet.')}<br />{t('Check back soon for site progress reports.')}</p>
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedQuotation && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-slate-900 border border-white/5 rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl"
+          >
+            <div className="p-8 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-tight">{t('Scan to Pay')}</h3>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{t('Payment for')}: {selectedQuotation.name}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowPaymentModal(false)}
+                className="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-500"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-8 flex flex-col items-center space-y-8">
+              <div className="relative p-6 bg-white rounded-[2rem] shadow-2xl">
+                <img 
+                  src={selectedQuotation.payment_qr_url} 
+                  alt="Payment QR" 
+                  className="w-64 h-64 h-64 object-contain"
+                />
+                <div className="absolute inset-x-0 bottom-4 flex justify-center">
+                   <div className="bg-slate-900 px-3 py-1 rounded-full flex items-center space-x-2 border border-slate-700">
+                      <ShieldAlert className="w-3 h-3 text-blue-500" />
+                      <span className="text-[10px] font-bold text-white uppercase tracking-widest">Secure SiteMaster Node</span>
+                   </div>
+                </div>
+              </div>
+
+              <div className="text-center space-y-2">
+                <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                  Please scan the QR code using any UPI app or Banking application to complete your payment securely.
+                </p>
+              </div>
+
+              <button
+                onClick={handleMockPayment}
+                disabled={isPaying}
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black py-5 rounded-[1.5rem] shadow-xl shadow-blue-900/30 uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center"
+              >
+                {isPaying ? (
+                  <><Loader2 className="w-5 h-5 mr-3 animate-spin" /> {t('Processing Payment...')}</>
+                ) : (
+                  <>{t('Confirm Payment')} <CheckCircle2 className="ml-3 w-5 h-5" /></>
+                )}
+              </button>
+              
+              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest text-center">
+                This transaction is protected by SiteMaster end-to-end encryption.
+              </p>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

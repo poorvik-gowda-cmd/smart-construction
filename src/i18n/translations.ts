@@ -148,6 +148,14 @@ export const translations = {
     'Management Suite': 'Management Suite',
     'Access your dashboard': 'Access your dashboard',
     'Explore Projects': 'Explore Projects',
+    
+    // Payment QR
+    'Generate Payment QR': 'Generate Payment QR',
+    'Awaiting Payment': 'Awaiting Payment',
+    'Paid': 'Paid',
+    'Scan to Pay': 'Scan to Pay',
+    'Payment for': 'Payment for',
+    'Close': 'Close',
   },
   kn: {
     // Sidebar
@@ -296,6 +304,14 @@ export const translations = {
     'Management Suite': 'ಮ್ಯಾನೇಜ್‌ಮೆಂಟ್ ಸೂಟ್',
     'Access your dashboard': 'ನಿಮ್ಮ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಪ್ರವೇಶಿಸಿ',
     'Explore Projects': 'ಯೋಜನೆಗಳನ್ನು ಅನ್ವೇಷಿಸಿ',
+    
+    // Payment QR
+    'Generate Payment QR': 'ಪಾವತಿ QR ಜನರೇಟ್ ಮಾಡಿ',
+    'Awaiting Payment': 'ಪಾವತಿಗಾಗಿ ಕಾಯಲಾಗುತ್ತಿದೆ',
+    'Paid': 'ಪಾವತಿಸಲಾಗಿದೆ',
+    'Scan to Pay': 'ಪಾವತಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ',
+    'Payment for': 'ಪಾವತಿಗಾಗಿ',
+    'Close': 'ಮುಚ್ಚಿ',
   },
   hi: {
     // Sidebar
@@ -444,5 +460,13 @@ export const translations = {
     'Management Suite': 'मैनेजमेंट सुइट',
     'Access your dashboard': 'अपना डैशबोर्ड एक्सेस करें',
     'Explore Projects': 'परियोजनाओं का अन्वेषण करें',
+    
+    // Payment QR
+    'Generate Payment QR': 'भुगतान QR जेनरेट करें',
+    'Awaiting Payment': 'भुगतान की प्रतीक्षा है',
+    'Paid': 'भुगतान किया गया',
+    'Scan to Pay': 'भुगतान के लिए स्कैन करें',
+    'Payment for': 'के लिए भुगतान',
+    'Close': 'बंद करें',
   }
 };

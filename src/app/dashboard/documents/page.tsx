@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Files, Search, Plus, Download, Eye, Trash2, FolderOpen, FileText, Image, FileSpreadsheet, X, Upload, Loader2 } from 'lucide-react';
+import { Files, Search, Plus, Download, Eye, Trash2, FolderOpen, FileText, Image, FileSpreadsheet, X, Upload, Loader2, QrCode, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Realtime data fetched from documents table
 
@@ -21,6 +22,7 @@ const typeBadgeColor = (type: string) => {
 };
 
 export default function DocumentsPage() {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeType, setActiveType] = useState('All');
   const [documents, setDocuments] = useState<any[]>([]);
@@ -128,6 +130,30 @@ export default function DocumentsPage() {
     }
   };
 
+  const handleGenerateQR = async (docId: string, docName: string) => {
+    try {
+      const supabase = createClient();
+      const qrData = `PAYMENT-${docId}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`;
+      
+      const { error } = await supabase
+        .from('documents')
+        .update({ 
+          payment_qr_url: qrUrl,
+          payment_status: 'PENDING'
+        })
+        .eq('id', docId);
+
+      if (error) throw error;
+      
+      // Update local state
+      setDocuments(documents.map(d => d.id === docId ? { ...d, payment_qr_url: qrUrl, payment_status: 'PENDING' } : d));
+    } catch (error: any) {
+      console.error('QR Gen error:', error);
+      alert('Failed to generate QR. Please check database permissions.');
+    }
+  };
+
   const filtered = documents.filter(d =>
     d.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (activeType === 'All' || d.file_type === activeType)
@@ -193,6 +219,17 @@ export default function DocumentsPage() {
               <FolderOpen className="w-3 h-3 inline-block mr-1 text-indigo-500/50 relative -top-[1px]" />
               {doc.project} • {doc.size}
             </p>
+            {doc.payment_qr_url && (
+              <div className="mb-4 flex items-center space-x-2">
+                <span className={cn(
+                  "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border",
+                  doc.payment_status === 'PAID' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                )}>
+                  {doc.payment_status === 'PAID' ? t('Paid') : t('Awaiting Payment')}
+                </span>
+                {doc.payment_status === 'PAID' && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+              </div>
+            )}
             <div className="border-t border-white/5 pt-4 flex items-center justify-between">
               <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">{doc.uploaded}</span>
               <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -202,6 +239,24 @@ export default function DocumentsPage() {
                 >
                   <Eye className="w-4 h-4" />
                 </button>
+                {doc.file_type === 'QUOTATION' && !doc.payment_qr_url && (
+                  <button 
+                    onClick={() => handleGenerateQR(doc.id, doc.name)}
+                    className="p-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-lg transition-colors border border-amber-500/10" 
+                    title={t('Generate Payment QR')}
+                  >
+                    <QrCode className="w-4 h-4" />
+                  </button>
+                )}
+                {doc.payment_qr_url && (
+                   <button 
+                    onClick={() => window.open(doc.payment_qr_url, '_blank')}
+                    className="p-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 rounded-lg transition-colors border border-amber-500/10" 
+                    title={t('View QR Code')}
+                   >
+                     <QrCode className="w-4 h-4" />
+                   </button>
+                )}
                 <button 
                   onClick={() => {
                     const link = document.createElement('a');
