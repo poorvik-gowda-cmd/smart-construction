@@ -113,6 +113,19 @@ export const translations = {
     'Quotation': 'Quotation',
     'Share with Client (Mandatory for Quotations)': 'Share with Client (Mandatory for Quotations)',
     'Latest Quotations': 'Latest Quotations',
+    
+    // Landing Page
+    'SiteMaster Platform': 'SiteMaster Platform',
+    'Choose Your Portal': 'Choose Your Portal',
+    'Select your role to access your personalized dashboard and tools.': 'Select your role to access your personalized dashboard and tools.',
+    'Full system control, AI insights, all projects & financials.': 'Full system control, AI insights, all projects & financials.',
+    'Full Access': 'Full Access',
+    'Attendance management, site updates, labor & materials tracking.': 'Attendance management, site updates, labor & materials tracking.',
+    'Site Portal': 'Site Portal',
+    'View project progress, geo-tagged updates, documents & reports.': 'View project progress, geo-tagged updates, documents & reports.',
+    'Read Only': 'Read Only',
+    'Enter Portal': 'Enter Portal',
+    '© 2026 SiteMaster Construction Technologies · AI-Powered · Version 1.0.4-PRO': '© 2026 SiteMaster Construction Technologies · AI-Powered · Version 1.0.4-PRO',
   },
   kn: {
     // Sidebar
@@ -226,6 +239,19 @@ export const translations = {
     'Quotation': 'ಕೋಟ್ (Quotation)',
     'Share with Client (Mandatory for Quotations)': 'ಕ್ಲೈಂಟ್ ಜೊತೆ ಹಂಚಿಕೊಳ್ಳಿ (ಕೋಟ್ ಅನಿವಾರ್ಯ)',
     'Latest Quotations': 'ಇತ್ತೀಚಿನ ಕೋಟ್ಗಳು',
+    
+    // Landing Page
+    'SiteMaster Platform': 'ಸೈಟ್‌ಮಾಸ್ಟರ್ ಪ್ಲಾಟ್‌ಫಾರ್ಮ್',
+    'Choose Your Portal': 'ನಿಮ್ಮ ಪೋರ್ಟಲ್ ಆಯ್ಕೆಮಾಡಿ',
+    'Select your role to access your personalized dashboard and tools.': 'ನಿಮ್ಮ ವೈಯಕ್ತೀಕರಿಸಿದ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಮತ್ತು ಪರಿಕರಗಳನ್ನು ಪ್ರವೇಶಿಸಲು ನಿಮ್ಮ ಪಾತ್ರವನ್ನು ಆಯ್ಕೆಮಾಡಿ.',
+    'Full system control, AI insights, all projects & financials.': 'ಪೂರ್ಣ ಸಿಸ್ಟಮ್ ನಿಯಂತ್ರಣ, AI ಒಳನೋಟಗಳು, ಎಲ್ಲಾ ಯೋಜನೆಗಳು ಮತ್ತು ಹಣಕಾಸು.',
+    'Full Access': 'ಪೂರ್ಣ ಪ್ರವೇಶ',
+    'Attendance management, site updates, labor & materials tracking.': 'ಹಾಜರಾತಿ ನಿರ್ವಹಣೆ, ಸೈಟ್ ನವೀಕರಣಗಳು, ಕಾರ್ಮಿಕ ಮತ್ತು ಸಾಮಗ್ರಿಗಳ ಟ್ರ್ಯಾಕಿಂಗ್.',
+    'Site Portal': 'ಸೈಟ್ ಪೋರ್ಟಲ್',
+    'View project progress, geo-tagged updates, documents & reports.': 'ಯೋಜನೆಯ ಪ್ರಗತಿ, ಜಿಯೋ-ಟ್ಯಾಗ್ ಮಾಡಿದ ನವೀಕರಣಗಳು, ದಾಖಲೆಗಳು ಮತ್ತು ವರದಿಗಳನ್ನು ವೀಕ್ಷಿಸಿ.',
+    'Read Only': 'ಓದಲು ಮಾತ್ರ',
+    'Enter Portal': 'ಪೋರ್ಟಲ್ ಪ್ರವೇಶಿಸಿ',
+    '© 2026 SiteMaster Construction Technologies · AI-Powered · Version 1.0.4-PRO': '© 2026 ಸೈಟ್‌ಮಾಸ್ಟರ್ ಕನ್ಸ್ಟ್ರಕ್ಷನ್ ಟೆಕ್ನಾಲಜೀಸ್ · AI-ಚಾಲಿತ · ಆವೃತ್ತಿ 1.0.4-PRO',
   },
   hi: {
     // Sidebar
@@ -339,5 +365,18 @@ export const translations = {
     'Quotation': 'कोटेशन (Quotation)',
     'Share with Client (Mandatory for Quotations)': 'क्लाइंट के साथ साझा करें (कोटेशन के लिए अनिवार्य)',
     'Latest Quotations': 'नवीनतम कोटेशन',
+    
+    // Landing Page
+    'SiteMaster Platform': 'साइटमास्टर प्लेटफॉर्म',
+    'Choose Your Portal': 'अपना पोर्टल चुनें',
+    'Select your role to access your personalized dashboard and tools.': 'अपने व्यक्तिगत डैशबोर्ड और टूल तक पहुंचने के लिए अपनी भूमिका चुनें।',
+    'Full system control, AI insights, all projects & financials.': 'पूर्ण सिस्टम नियंत्रण, AI अंतर्दृष्टि, सभी परियोजनाएं और वित्त।',
+    'Full Access': 'पूर्ण पहुंच',
+    'Attendance management, site updates, labor & materials tracking.': 'उपस्थिति प्रबंधन, साइट अपडेट, श्रम और सामग्री ट्रैकिंग।',
+    'Site Portal': 'साइट पोर्टल',
+    'View project progress, geo-tagged updates, documents & reports.': 'परियोजना की प्रगति, जियो-टैग किए गए अपडेट, दस्तावेज़ और रिपोर्ट देखें।',
+    'Read Only': 'केवल पढ़ने के लिए',
+    'Enter Portal': 'पोर्टल दर्ज करें',
+    '© 2026 SiteMaster Construction Technologies · AI-Powered · Version 1.0.4-PRO': '© 2026 साइटमास्टर कंस्ट्रक्शन टेक्नोलॉजीज · AI-संचालित · संस्करण 1.0.4-PRO',
   }
 };

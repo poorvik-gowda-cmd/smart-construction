@@ -2,48 +2,56 @@
 
 import { useRouter } from 'next/navigation';
 import { Hammer, ShieldCheck, User, HardHat, ArrowRight, Zap } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
-const portals = [
+const getPortals = (t: (key: string) => string) => [
   {
     role: 'admin',
-    label: 'Admin',
-    description: 'Full system control, AI insights, all projects & financials.',
+    label: t('Administrator'),
+    description: t('Full system control, AI insights, all projects & financials.'),
     icon: ShieldCheck,
     gradient: 'from-blue-600 to-indigo-700',
     glow: 'shadow-blue-900/40',
     border: 'hover:border-blue-500/50',
     badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    badgeText: 'Full Access',
+    badgeText: t('Full Access'),
   },
   {
     role: 'engineer',
-    label: 'Engineer',
-    description: 'Attendance management, site updates, labor & materials tracking.',
+    label: t('Site Engineer'),
+    description: t('Attendance management, site updates, labor & materials tracking.'),
     icon: HardHat,
     gradient: 'from-amber-500 to-orange-600',
     glow: 'shadow-amber-900/40',
     border: 'hover:border-amber-500/50',
     badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    badgeText: 'Site Portal',
+    badgeText: t('Site Portal'),
   },
   {
     role: 'client',
-    label: 'Client',
-    description: 'View project progress, geo-tagged updates, documents & reports.',
+    label: t('Project Client'),
+    description: t('View project progress, geo-tagged updates, documents & reports.'),
     icon: User,
     gradient: 'from-emerald-500 to-teal-600',
     glow: 'shadow-emerald-900/40',
     border: 'hover:border-emerald-500/50',
     badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    badgeText: 'Read Only',
+    badgeText: t('Read Only'),
   },
 ];
 
 export default function PortalSelectorPage() {
   const router = useRouter();
+  const { t } = useLanguage();
+  const portals = getPortals(t);
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Language Switcher Positioned at Top Right */}
+      <div className="absolute top-8 right-8 z-50">
+        <LanguageSwitcher />
+      </div>
       <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[140px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-15%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 blur-[140px] rounded-full pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] h-[30%] bg-amber-600/5 blur-[120px] rounded-full pointer-events-none" />
@@ -57,13 +65,13 @@ export default function PortalSelectorPage() {
           </div>
           <div className="flex items-center justify-center space-x-2 mb-2">
             <Zap className="w-4 h-4 text-blue-500" />
-            <span className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.4em]">SiteMaster Platform</span>
+            <span className="text-[10px] font-bold text-blue-500 uppercase tracking-[0.4em]">{t('SiteMaster Platform')}</span>
           </div>
           <h1 className="text-5xl font-extrabold text-white tracking-tight leading-tight">
-            Choose Your Portal
+            {t('Choose Your Portal')}
           </h1>
           <p className="text-slate-400 text-lg max-w-md mx-auto font-medium">
-            Select your role to access your personalized dashboard and tools.
+            {t('Select your role to access your personalized dashboard and tools.')}
           </p>
         </div>
 
@@ -89,7 +97,7 @@ export default function PortalSelectorPage() {
                   {portal.description}
                 </p>
                 <div className="mt-6 flex items-center space-x-2 text-slate-600 group-hover:text-slate-300 transition-colors">
-                  <span className="text-xs font-bold uppercase tracking-widest">Enter Portal</span>
+                  <span className="text-xs font-bold uppercase tracking-widest">{t('Enter Portal')}</span>
                   <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                 </div>
                 <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${portal.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none`} />
@@ -99,7 +107,7 @@ export default function PortalSelectorPage() {
         </div>
 
         <p className="text-center text-[10px] font-bold text-slate-800 uppercase tracking-widest">
-          © 2026 SiteMaster Construction Technologies · AI-Powered · Version 1.0.4-PRO
+          {t('© 2026 SiteMaster Construction Technologies · AI-Powered · Version 1.0.4-PRO')}
         </p>
       </div>
     </div>
