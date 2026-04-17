@@ -7,8 +7,12 @@ import {
   ExternalLink, 
   Eye, 
   MoreHorizontal,
-  FolderOpen
+  FolderOpen,
+  QrCode,
+  CheckCircle2
 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase';
 
 interface ProjectDocumentListProps {
@@ -16,6 +20,7 @@ interface ProjectDocumentListProps {
 }
 
 export default function ProjectDocumentList({ projectId }: ProjectDocumentListProps) {
+  const { t } = useLanguage();
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
@@ -36,6 +41,45 @@ export default function ProjectDocumentList({ projectId }: ProjectDocumentListPr
     }
     fetchDocuments();
   }, [projectId]);
+
+  const handleGenerateQR = async (docId: string) => {
+    try {
+      // 1. Get the client assigned to this project
+      const { data: assignment } = await supabase
+        .from('engineer_client_assignments')
+        .select('client_id')
+        .eq('project_id', projectId)
+        .maybeSingle();
+
+      const clientId = assignment?.client_id;
+      if (!clientId) {
+        alert('No client is assigned to this project yet. Please assign a client first.');
+        return;
+      }
+
+      // 2. Generate QR URL
+      const qrData = `PAYMENT-${docId}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`;
+      
+      // 3. Update document with QR and share with THAT particular client
+      const { error } = await supabase
+        .from('documents')
+        .update({ 
+          payment_qr_url: qrUrl,
+          payment_status: 'PENDING',
+          shared_with_client_id: clientId
+        })
+        .eq('id', docId);
+
+      if (error) throw error;
+      
+      // Update local state
+      setDocuments(documents.map(d => d.id === docId ? { ...d, payment_qr_url: qrUrl, payment_status: 'PENDING' } : d));
+    } catch (error: any) {
+      console.error('QR Gen error:', error);
+      alert('Failed to generate QR for this project client.');
+    }
+  };
 
   const getFileTypeIcon = (type: string) => {
     return FileText;
@@ -78,7 +122,39 @@ export default function ProjectDocumentList({ projectId }: ProjectDocumentListPr
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
+                    {doc.payment_qr_url && (
+                      <div className="flex items-center space-x-2 mr-2">
+                        <span className={cn(
+                          "text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full border",
+                          doc.payment_status === 'PAID' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        )}>
+                          {doc.payment_status === 'PAID' ? t('Paid') : t('Awaiting Payment')}
+                        </span>
+                        {doc.payment_status === 'PAID' && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
+                      </div>
+                    )}
+
+                    {doc.file_type === 'QUOTATION' && !doc.payment_qr_url && (
+                      <button 
+                        onClick={() => handleGenerateQR(doc.id)}
+                        className="p-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl transition-all group/qr"
+                        title={t('Generate Payment QR')}
+                      >
+                        <QrCode className="w-4 h-4 text-amber-400 group-hover/qr:scale-110 transition-transform" />
+                      </button>
+                    )}
+
+                    {doc.payment_qr_url && (
+                       <button 
+                        onClick={() => window.open(doc.payment_qr_url, '_blank')}
+                        className="p-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-xl transition-all group/qr"
+                        title={t('View QR Code')}
+                       >
+                         <QrCode className="w-4 h-4 text-blue-400 group-hover/qr:scale-110 transition-transform" />
+                       </button>
+                    )}
+
                     <a 
                       href={doc.file_url} 
                       target="_blank" 
