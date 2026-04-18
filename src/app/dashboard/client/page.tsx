@@ -101,16 +101,28 @@ export default function ClientPage() {
 
       // 6. AI Risk Analysis
       try {
+        const rate = (attendAll || []).length > 0 ? Math.round((presentCount / (attendAll || []).length) * 100) : 0;
+        const lowStockCount = (mats || []).filter(m => (m.stock_level || 0) <= (m.reorder_point || 0)).length;
+        const stockHealth = (mats || []).length > 0 ? Math.round((((mats || []).length - lowStockCount) / (mats || []).length) * 100) : 100;
+
         const res = await fetch('/api/ai/risk-analysis', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectId }),
+          body: JSON.stringify({ 
+            attendanceTrend: `${rate}% attendance today (${presentCount} workers on site)`,
+            materialStatus: `Global stock health at ${stockHealth}%.`,
+            budgetStatus: `${asgn.project?.budget || 0} total budget.`,
+            progressPercent: asgn.project?.progress_percent || 0,
+            context: 'Project-specific (Client View)'
+          }),
         });
         if (res.ok) {
           const ai = await res.json();
           setAiInsight(ai);
         }
-      } catch {}
+      } catch (err) {
+        console.warn('AI Analysis failed:', err);
+      }
 
       setLoading(false);
     }

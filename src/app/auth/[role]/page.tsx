@@ -74,8 +74,11 @@ export default function AuthPage() {
     setLoading(true);
     setError(null);
 
-    let loginEmail = email;
-    let loginPassword = password;
+    const sanitizedEmail = email.trim();
+    const sanitizedPassword = password.trim();
+
+    let loginEmail = sanitizedEmail;
+    let loginPassword = sanitizedPassword;
 
     if (role === 'engineer') {
       const sanitizedKey = companyId.trim().toUpperCase();
@@ -116,10 +119,27 @@ export default function AuthPage() {
 
     if (error) {
       console.error('Supabase Auth error:', error.message);
-      setError(role === 'engineer' ? `Authentication Failed: ${error.message}` : error.message);
+      
+      let displayError = error.message;
+      if (role === 'admin' && error.message.includes('Invalid login credentials')) {
+        displayError = 'Administrative account not found. If this is a new project, please run the Admin Bootstrap SQL.';
+      } else if (error.message.includes('Email not confirmed')) {
+        displayError = 'Email not verified. Please check your inbox or contact your Admin.';
+      } else if (role === 'client' && error.message.includes('Invalid login credentials')) {
+        displayError = 'Invalid email or password. If you don\'t have an account, please Sign Up first.';
+      } else if (role === 'engineer') {
+        displayError = `Authentication Failed: ${error.message}`;
+      }
+
+      setError(displayError);
       setLoading(false);
     } else {
-      router.push('/dashboard');
+      // Redirect clients to their dedicated portal, others to the general dashboard
+      if (role === 'client') {
+        router.push('/dashboard/client');
+      } else {
+        router.push('/dashboard');
+      }
     }
   };
 
@@ -173,7 +193,11 @@ export default function AuthPage() {
 
     // 3. If user has a session (email confirm disabled), go straight to dashboard
     if (data.session) {
-      router.push('/dashboard');
+      if (role === 'client') {
+        router.push('/dashboard/client');
+      } else {
+        router.push('/dashboard');
+      }
       return;
     }
 

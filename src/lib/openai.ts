@@ -65,7 +65,7 @@ export const analyzeProjectRisk = async (data: {
     return {
       score: Math.max(10, score),
       classification,
-      insight: `[AI Fallback Mode] ${insight}`,
+      insight,
     };
   }
 };

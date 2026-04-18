@@ -94,7 +94,7 @@ export default function ProjectDocumentList({ projectId }: ProjectDocumentListPr
       setDocuments(documents.map(d => d.id === docId ? { ...d, payment_qr_url: qrUrl, payment_status: 'PENDING' } : d));
     } catch (error: any) {
       console.error('QR Gen error:', error);
-      alert('Failed to generate QR for this project client.');
+      alert(`Failed to generate QR: ${error.message || 'Unknown Error'}`);
     }
   };
 
