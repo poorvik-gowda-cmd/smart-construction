@@ -1,13 +1,17 @@
+'use client';
+
 import { Project } from '@/types';
 import { Calendar, MapPin, MoreVertical, TrendingUp } from 'lucide-react';
 import { cn, formatINR } from '@/lib/utils';
 import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ProjectCardProps {
   project: Project;
 }
 
 export default function ProjectCard({ project }: ProjectCardProps) {
+  const { t } = useLanguage();
   const statusColors = {
     planned: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
     ongoing: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
@@ -38,7 +42,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
         <div className="mb-6">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
-            <span>Overall Progress</span>
+            <span>{t('Overall Progress')}</span>
             <span className="text-slate-300">{project.progress_percent}%</span>
           </div>
           <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
@@ -56,7 +60,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           <div className="bg-slate-950/50 border border-slate-800/50 rounded-xl p-3">
             <div className="flex items-center text-slate-500 mb-1">
               <span className="text-[10px] font-bold uppercase tracking-widest mr-1">₹</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest">Budget</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest">{t('Budget')}</span>
             </div>
             <p className="text-sm font-bold text-slate-200">
               {formatINR(project.budget, true)}
@@ -65,7 +69,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           <div className="bg-slate-950/50 border border-slate-800/50 rounded-xl p-3">
             <div className="flex items-center text-slate-500 mb-1">
               <Calendar className="w-3.5 h-3.5 mr-1" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">End Date</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest">{t('End Date')}</span>
             </div>
             <p className="text-sm font-bold text-slate-200">
               {project.end_date ? new Date(project.end_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'TBD'}
@@ -97,11 +101,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       <div className="bg-slate-950/40 px-6 py-4 border-t border-slate-800 flex items-center justify-between">
          <div className="flex items-center text-emerald-400 text-[10px] font-bold uppercase tracking-widest">
            <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
-           On Track
+           {t('On Track')}
          </div>
          <Link href={`/dashboard/projects/${project.id}`}>
            <button className="text-blue-400 hover:text-blue-300 text-xs font-bold uppercase tracking-widest transition-colors">
-             Manage
+             {t('Manage')}
            </button>
          </Link>
       </div>

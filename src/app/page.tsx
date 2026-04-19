@@ -107,7 +107,7 @@ export default function LandingPage() {
           <div className="flex items-center space-x-6">
             <LanguageSwitcher />
             <button className="hidden sm:block px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl shadow-blue-900/20 active:scale-95">
-              Contact Us
+              {t('Contact Us')}
             </button>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function LandingPage() {
             </div>
             
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter leading-[0.9] uppercase italic">
-              {t('Building the')}<br />
+              {t('Building The')}<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-b from-blue-400 to-indigo-700">{t('Future')}</span>
             </h1>
             
@@ -172,8 +172,8 @@ export default function LandingPage() {
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Safety Rating</p>
-              <p className="text-sm font-black text-white">99.9% ZERO INCIDENTS</p>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('Safety Rating')}</p>
+              <p className="text-sm font-black text-white">{t('99.9% Zero Incidents')}</p>
             </div>
           </div>
         </motion.div>
@@ -195,12 +195,12 @@ export default function LandingPage() {
             <div className="max-w-2xl space-y-6">
               <div className="inline-flex items-center space-x-2 bg-blue-600/10 px-4 py-2 rounded-full border border-blue-500/20">
                 <Globe className="w-4 h-4 text-blue-500" />
-                <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Our Global Footprint</span>
+                <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{t('Our Global Footprint')}</span>
               </div>
               <h2 className="text-5xl md:text-7xl font-black text-white italic uppercase">{t('Reputed Projects')}</h2>
             </div>
             <p className="text-slate-500 max-w-sm text-sm font-bold uppercase tracking-widest leading-loose">
-              Setting new benchmarks in architectural intelligence and structural sustainability across the globe.
+              {t('Setting new benchmarks in architectural intelligence and structural sustainability across the globe.')}
             </p>
           </div>
 
@@ -233,7 +233,7 @@ export default function LandingPage() {
                     <service.icon className="w-6 h-6 text-white" />
                   </div>
                   <h4 className="text-lg font-black text-white uppercase tracking-tight">{t(service.title)}</h4>
-                  <p className="text-sm text-slate-500 font-medium leading-relaxed">{service.desc}</p>
+                  <p className="text-sm text-slate-500 font-medium leading-relaxed">{t(service.desc)}</p>
                 </div>
               ))}
             </div>
@@ -294,7 +294,7 @@ export default function LandingPage() {
               </span>
             </div>
             <p className="text-slate-500 max-w-md text-sm leading-relaxed font-medium">
-              We define the standard of excellence in the construction industry through cutting-edge AI integration and unyielding structural integrity.
+              {t('We define the standard of excellence in the construction industry through cutting-edge AI integration and unyielding structural integrity.')}
             </p>
             <div className="flex items-center space-x-6">
               {[Globe, MessageSquare, Share2].map((Icon, idx) => (
@@ -304,7 +304,7 @@ export default function LandingPage() {
           </div>
 
           <div className="space-y-6">
-            <h5 className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Contact</h5>
+            <h5 className="text-[10px] font-black text-white uppercase tracking-[0.4em]">{t('Contact')}</h5>
             <div className="space-y-4 text-slate-500 font-medium">
               <div className="flex items-center space-x-3">
                 <Mail className="w-4 h-4 text-blue-500" />
@@ -318,11 +318,11 @@ export default function LandingPage() {
           </div>
 
           <div className="space-y-6">
-            <h5 className="text-[10px] font-black text-white uppercase tracking-[0.4em]">Governance</h5>
+            <h5 className="text-[10px] font-black text-white uppercase tracking-[0.4em]">{t('Governance')}</h5>
             <div className="space-y-4 text-slate-500 font-medium flex flex-col">
-              <a href="#" className="hover:text-white transition-colors">Safety Protocols</a>
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Legal Terms</a>
+              <a href="#" className="hover:text-white transition-colors">{t('Safety Protocols')}</a>
+              <a href="#" className="hover:text-white transition-colors">{t('Privacy Policy')}</a>
+              <a href="#" className="hover:text-white transition-colors">{t('Legal Terms')}</a>
             </div>
           </div>
         </div>
@@ -333,7 +333,7 @@ export default function LandingPage() {
           </p>
           <div className="flex items-center space-x-2">
             <Zap className="w-4 h-4 text-blue-500 animate-pulse" />
-            <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">SiteMaster Core Engine Active</span>
+            <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">{t('SiteMaster Core Engine Active')}</span>
           </div>
         </div>
       </footer>

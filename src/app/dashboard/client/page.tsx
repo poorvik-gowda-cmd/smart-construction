@@ -489,14 +489,14 @@ export default function ClientPage() {
                 <div className="absolute inset-x-0 bottom-4 flex justify-center">
                    <div className="bg-slate-900 px-3 py-1 rounded-full flex items-center space-x-2 border border-slate-700">
                       <ShieldAlert className="w-3 h-3 text-blue-500" />
-                      <span className="text-[10px] font-bold text-white uppercase tracking-widest">Secure SiteMaster Node</span>
+                      <span className="text-[10px] font-bold text-white uppercase tracking-widest">{t('Secure SiteMaster Node')}</span>
                    </div>
                 </div>
               </div>
 
               <div className="text-center space-y-2">
                 <p className="text-slate-400 text-sm font-medium leading-relaxed">
-                  Please scan the QR code using any UPI app or Banking application to complete your payment securely.
+                  {t('Please scan the QR code using any UPI app or Banking application to complete your payment securely.')}
                 </p>
               </div>
 
@@ -513,7 +513,7 @@ export default function ClientPage() {
               </button>
               
               <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest text-center">
-                This transaction is protected by SiteMaster end-to-end encryption.
+                {t('This transaction is protected by SiteMaster end-to-end encryption.')}
               </p>
             </div>
           </motion.div>

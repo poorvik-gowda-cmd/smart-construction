@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { Users, Clock, CheckCircle2, UserCog, Mail, ShieldCheck, Loader2, AlertCircle, XCircle, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function AdminUsersPage() {
+  const { t } = useLanguage();
   const [pendingClients, setPendingClients] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,6 @@ export default function AdminUsersPage() {
       updates = { pending_assignment: false, is_approved: true };
     } else if (status === 'recheck') {
       updates = { pending_assignment: true, is_approved: false };
-      // Note: Ideally we add a recheck_reason column, but for now we use status logic
     } else if (status === 'rejected') {
       updates = { pending_assignment: false, is_approved: false };
     }
@@ -63,8 +64,8 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">User Management</h1>
-        <p className="text-slate-500 mt-1">Manage all platform users — engineers, clients, and admins.</p>
+        <h1 className="text-3xl font-extrabold text-white tracking-tight">{t('User Management')}</h1>
+        <p className="text-slate-500 mt-1">{t('Manage all platform users — engineers, clients, and admins.')}</p>
       </div>
 
       {/* Pending Clients Queue */}
@@ -75,8 +76,8 @@ export default function AdminUsersPage() {
               <Clock className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Pending Approval</h2>
-              <p className="text-xs text-slate-500">{pendingClients.length} client(s) are waiting to be assigned to an engineer.</p>
+              <h2 className="text-lg font-bold text-white">{t('Pending Approval')}</h2>
+              <p className="text-xs text-slate-500">{pendingClients.length} client(s) {t('waiting to be assigned')}</p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -87,8 +88,8 @@ export default function AdminUsersPage() {
                     {client.full_name?.[0]?.toUpperCase() || 'C'}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white">{client.full_name || 'Unnamed Client'}</p>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-widest">Pending Assignment</p>
+                    <p className="text-sm font-bold text-white">{client.full_name || t('Unnamed Client')}</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest">{t('Pending Assignment')}</p>
                   </div>
                 </div>
                 <p className="text-[10px] text-slate-600 font-mono">{client.id}</p>
@@ -98,7 +99,7 @@ export default function AdminUsersPage() {
                     href={`/dashboard/admin/assignments?clientId=${client.id}`}
                     className="flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl text-[10px] uppercase tracking-widest transition-all"
                   >
-                    <UserCheck className="w-3 h-3 mr-2" /> Assign Engineer
+                    <UserCheck className="w-3 h-3 mr-2" /> {t('Assign Engineer')}
                   </a>
                   
                   <div className="grid grid-cols-2 gap-2">
@@ -106,13 +107,13 @@ export default function AdminUsersPage() {
                       onClick={() => handleStatusUpdate(client.id, 'recheck')}
                       className="flex items-center justify-center bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/20 font-bold py-2 rounded-xl text-[9px] uppercase tracking-tighter transition-all"
                     >
-                      <AlertCircle className="w-3 h-3 mr-1" /> Recheck
+                      <AlertCircle className="w-3 h-3 mr-1" /> {t('Recheck')}
                     </button>
                     <button
                       onClick={() => handleStatusUpdate(client.id, 'rejected')}
                       className="flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 font-bold py-2 rounded-xl text-[9px] uppercase tracking-tighter transition-all"
                     >
-                      <XCircle className="w-3 h-3 mr-1" /> Reject
+                      <XCircle className="w-3 h-3 mr-1" /> {t('Reject')}
                     </button>
                   </div>
                 </div>
@@ -126,8 +127,8 @@ export default function AdminUsersPage() {
       <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
         <div className="p-6 border-b border-white/5 flex items-center space-x-3">
           <Users className="w-5 h-5 text-blue-500" />
-          <h2 className="text-lg font-bold text-white">All Platform Users</h2>
-          <span className="text-xs font-bold text-slate-500 bg-slate-800 px-2 py-1 rounded-lg">{allUsers.length} total</span>
+          <h2 className="text-lg font-bold text-white">{t('All Platform Users')}</h2>
+          <span className="text-xs font-bold text-slate-500 bg-slate-800 px-2 py-1 rounded-lg">{allUsers.length} {t('total')}</span>
         </div>
         {loading ? (
           <div className="py-20 flex justify-center items-center">
@@ -138,11 +139,11 @@ export default function AdminUsersPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-slate-950/30 border-b border-white/5">
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">User</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Role</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Security Key</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Joined</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('User')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Role')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Security Key')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Status')}</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Joined')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -176,11 +177,11 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-4">
                       {!user.pending_assignment ? (
                         <span className="flex items-center text-emerald-400 text-xs font-bold">
-                          <CheckCircle2 className="w-4 h-4 mr-1.5" /> Active
+                          <CheckCircle2 className="w-4 h-4 mr-1.5" /> {t('Active')}
                         </span>
                       ) : (
                         <span className="flex items-center text-amber-400 text-xs font-bold">
-                          <Clock className="w-4 h-4 mr-1.5" /> Pending
+                          <Clock className="w-4 h-4 mr-1.5" /> {t('Pending')}
                         </span>
                       )}
                     </td>

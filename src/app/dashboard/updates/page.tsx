@@ -17,8 +17,10 @@ import {
   X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function SiteUpdatesPage() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'feed' | 'map'>('feed');
   const [updates, setUpdates] = useState<SiteUpdate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,6 @@ export default function SiteUpdatesPage() {
           query = query.in('project_id', projectIds);
           projectsQuery = projectsQuery.in('id', projectIds);
         } else if (profile?.role === 'client') {
-          // Clients see their assigned project
           const { data: assignment } = await supabase
             .from('engineer_client_assignments')
             .select('project_id')
@@ -65,13 +66,12 @@ export default function SiteUpdatesPage() {
             query = query.eq('project_id', assignment.project_id);
             projectsQuery = projectsQuery.eq('id', assignment.project_id);
           } else {
-            // Fallback: If no assignment, check profile project_id
             const { data: profileWithProject } = await supabase.from('profiles').select('project_id').eq('id', user.id).single();
             if (profileWithProject?.project_id) {
                query = query.eq('project_id', profileWithProject.project_id);
                projectsQuery = projectsQuery.eq('id', profileWithProject.project_id);
             } else {
-               query = query.eq('project_id', '00000000-0000-0000-0000-000000000000'); // Force empty
+               query = query.eq('project_id', '00000000-0000-0000-0000-000000000000');
             }
           }
         }
@@ -115,7 +115,6 @@ export default function SiteUpdatesPage() {
 
       let finalImageUrl = `https://picsum.photos/seed/${Math.round(Math.random()*9999)}/600/400`;
 
-      // Upload real photo if provided
       if (selectedFile) {
         const fileExt = selectedFile.name.split('.').pop();
         const fileName = `${Math.random()}-${Date.now()}.${fileExt}`;
@@ -137,7 +136,6 @@ export default function SiteUpdatesPage() {
       let lat = 28.61;
       let lng = 77.23;
 
-      // Real-time Geolocation extraction
       if ('geolocation' in navigator) {
         try {
           const position = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -186,8 +184,8 @@ export default function SiteUpdatesPage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 h-full flex flex-col">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0 text-white">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Live Site Progress</h1>
-          <p className="text-slate-500 mt-1">Real-time geo-tagged logs and visual progress reports from project sites.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight">{t('Live Site Progress')}</h1>
+          <p className="text-slate-500 mt-1">{t('Real-time geo-tagged logs and visual progress reports from project sites.')}</p>
         </div>
         <div className="flex items-center space-x-3">
           <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-2xl shadow-xl">
@@ -198,7 +196,7 @@ export default function SiteUpdatesPage() {
                  activeTab === 'feed' ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-200"
                )}
              >
-                Feed View
+                {t('Feed View')}
              </button>
              <button 
                onClick={() => setActiveTab('map')}
@@ -207,7 +205,7 @@ export default function SiteUpdatesPage() {
                  activeTab === 'map' ? "bg-blue-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-200"
                )}
              >
-                Live Map
+                {t('Live Map')}
              </button>
           </div>
         </div>
@@ -218,7 +216,7 @@ export default function SiteUpdatesPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-white flex items-center">
                <Plus className="w-5 h-5 mr-2 text-blue-500" />
-               New Site Progress Log
+               {t('New Site Progress Log')}
             </h3>
             <button onClick={() => setShowForm(false)} className="text-slate-500 hover:text-white">
                <X className="w-5 h-5" />
@@ -226,7 +224,7 @@ export default function SiteUpdatesPage() {
           </div>
           {projects.length > 1 && (
             <div className="mb-4">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Project</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Project')}</label>
               <select
                 value={selectedProjectId}
                 onChange={e => setSelectedProjectId(e.target.value)}
@@ -259,7 +257,7 @@ export default function SiteUpdatesPage() {
                          <div className="p-3 rounded-full bg-blue-600/10 text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
                             <Camera className="w-6 h-6" />
                          </div>
-                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2">Clique to Upload Photo</span>
+                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2">{t('Click to Upload Photo')}</span>
                          <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                       </label>
                    )}
@@ -271,7 +269,7 @@ export default function SiteUpdatesPage() {
                     className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 px-8 rounded-xl flex items-center transition-all shadow-xl shadow-blue-900/20"
                   >
                     {posting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
-                    {posting ? 'Uploading...' : 'Post Site Log'}
+                    {posting ? t('Uploading...') : t('Post Site Log')}
                   </button>
                 </div>
              </div>
@@ -283,7 +281,7 @@ export default function SiteUpdatesPage() {
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center space-y-4">
             <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-            <p className="text-slate-400 text-sm animate-pulse">Syncing site activity...</p>
+            <p className="text-slate-400 text-sm animate-pulse">{t('Syncing site activity...')}</p>
           </div>
         ) : activeTab === 'feed' ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 pb-12">
@@ -324,14 +322,14 @@ export default function SiteUpdatesPage() {
                      <div className="flex items-center space-x-4 opacity-60 group-hover:opacity-100 transition-opacity">
                         <button className="flex items-center text-slate-400 hover:text-blue-400 transition-colors">
                            <MessageSquare className="w-4 h-4 mr-1.5" />
-                           <span className="text-[10px] font-bold uppercase tracking-widest">Comment</span>
+                           <span className="text-[10px] font-bold uppercase tracking-widest">{t('Comment')}</span>
                         </button>
                         <button className="flex items-center text-slate-400 hover:text-emerald-400 transition-colors">
                            <ImageIcon className="w-4 h-4 mr-1.5" />
-                           <span className="text-[10px] font-bold uppercase tracking-widest">HD Image</span>
+                           <span className="text-[10px] font-bold uppercase tracking-widest">{t('HD Image')}</span>
                         </button>
                      </div>
-                     <button className="text-blue-500 hover:text-blue-400 text-[10px] font-extrabold uppercase tracking-[0.2em] transition-all">Verify Map Location</button>
+                     <button className="text-blue-500 hover:text-blue-400 text-[10px] font-extrabold uppercase tracking-[0.2em] transition-all">{t('Verify Map Location')}</button>
                   </div>
                 </div>
               </div>

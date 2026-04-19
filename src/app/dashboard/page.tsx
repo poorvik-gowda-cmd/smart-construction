@@ -443,7 +443,7 @@ export default function DashboardPage() {
                  <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-6 border border-white/5 shadow-inner">
                     <MapPin className="w-10 h-10 text-slate-700" />
                  </div>
-                 <p className="text-slate-500 font-bold uppercase tracking-[0.2em] italic">No active updates found.</p>
+                 <p className="text-slate-500 font-bold uppercase tracking-[0.2em] italic">{t('No active updates found.')}</p>
               </div>
              )}
           </div>

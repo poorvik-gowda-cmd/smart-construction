@@ -2,6 +2,7 @@
 
 import { AIRiskResult } from '@/types';
 import { AlertCircle, CheckCircle2, Info, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
 
 interface AIInsightCardProps {
@@ -10,11 +11,12 @@ interface AIInsightCardProps {
 }
 
 export default function AIInsightCard({ data, loading }: AIInsightCardProps) {
+  const { t } = useLanguage();
   if (loading) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center min-h-[200px] animate-pulse">
         <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
-        <p className="text-slate-400 text-sm">Analyzing project data with AI...</p>
+        <p className="text-slate-400 text-sm">{t('Analyzing project data with AI...')}</p>
       </div>
     );
   }
@@ -41,7 +43,7 @@ export default function AIInsightCard({ data, loading }: AIInsightCardProps) {
             {isHighRisk ? <AlertCircle className="w-5 h-5" /> : 
              isModerateRisk ? <Info className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
           </div>
-          <h3 className="text-lg font-bold text-slate-100 italic tracking-wide">AI Risk Engine</h3>
+          <h3 className="text-lg font-bold text-slate-100 italic tracking-wide">{t('AI Risk Engine')}</h3>
         </div>
         <div className={cn(
           "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tighter",
@@ -55,7 +57,7 @@ export default function AIInsightCard({ data, loading }: AIInsightCardProps) {
       <div className="space-y-4">
         <div className="flex items-baseline space-x-2">
           <span className="text-4xl font-extrabold text-slate-100">{data.score}</span>
-          <span className="text-slate-500 text-sm font-medium">/ 100 Risk Score</span>
+          <span className="text-slate-500 text-sm font-medium">{t('/ 100 Risk Score')}</span>
         </div>
 
         <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800/50">
@@ -75,7 +77,7 @@ export default function AIInsightCard({ data, loading }: AIInsightCardProps) {
             />
           </div>
           <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest text-right">
-            Predictive Analysis Active
+            {t('Predictive Analysis Active')}
           </p>
         </div>
       </div>

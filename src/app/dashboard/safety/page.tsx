@@ -17,10 +17,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Realtime data fetched from safety_issues table
 
 export default function SafetyPage() {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [issues, setIssues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,8 +96,8 @@ export default function SafetyPage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Safety & Hazard Log</h1>
-          <p className="text-slate-500 mt-1">Monitor site risks, report incidents, and track protocol compliance.</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">{t('Safety & Hazard Log')}</h1>
+          <p className="text-slate-500 mt-1">{t('Monitor site risks, report incidents, and track protocol compliance.')}</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-2xl shadow-xl">
@@ -106,7 +108,7 @@ export default function SafetyPage() {
                  activeTab === 'list' ? "bg-rose-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-200"
                )}
              >
-                List
+                {t('List')}
              </button>
              <button 
                onClick={() => setActiveTab('map')}
@@ -115,12 +117,12 @@ export default function SafetyPage() {
                  activeTab === 'map' ? "bg-rose-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-200"
                )}
              >
-                Map
+                {t('Map')}
              </button>
           </div>
           <button onClick={() => setShowModal(true)} className="flex items-center bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-rose-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest">
             <ShieldAlert className="w-5 h-5 mr-2" />
-            Report Incident
+            {t('Report Incident')}
           </button>
         </div>
       </div>
@@ -133,12 +135,12 @@ export default function SafetyPage() {
                  <AlertTriangle className="w-7 h-7" />
               </div>
               <div>
-                 <h2 className="text-lg font-black text-rose-500 uppercase tracking-tighter italic">Critical Site Hazards Detected</h2>
-                 <p className="text-rose-400/80 text-xs font-bold uppercase tracking-widest leading-none">Immediate corrective action required for unresolved terminal risks.</p>
+                 <h2 className="text-lg font-black text-rose-500 uppercase tracking-tighter italic">{t('Critical Site Hazards Detected')}</h2>
+                 <p className="text-rose-400/80 text-xs font-bold uppercase tracking-widest leading-none">{t('Immediate corrective action required for unresolved terminal risks.')}</p>
               </div>
            </div>
            <div className="hidden md:block">
-              <span className="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-4 py-2 rounded-xl border border-rose-500/20 uppercase tracking-[0.3em]">Urgent Protocol Active</span>
+              <span className="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-4 py-2 rounded-xl border border-rose-500/20 uppercase tracking-[0.3em]">{t('Urgent Protocol Active')}</span>
            </div>
         </div>
       )}
@@ -150,10 +152,10 @@ export default function SafetyPage() {
                <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-500">
                   <Flame className="w-6 h-6" />
                </div>
-               <span className="text-[10px] font-bold text-rose-500 bg-rose-500/5 px-2 py-1 rounded uppercase tracking-[0.2em] shadow-inner">Urgent</span>
+               <span className="text-[10px] font-bold text-rose-500 bg-rose-500/5 px-2 py-1 rounded uppercase tracking-[0.2em] shadow-inner">{t('Urgent')}</span>
             </div>
             <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">04</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Critical Hazards</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Critical Hazards')}</p>
          </div>
 
          <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-3">
@@ -161,24 +163,24 @@ export default function SafetyPage() {
                <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500">
                   <Clock className="w-6 h-6" />
                </div>
-               <span className="text-[10px] font-bold text-blue-500 bg-blue-500/5 px-2 py-1 rounded uppercase tracking-[0.2em] shadow-inner">Tracking</span>
+               <span className="text-[10px] font-bold text-blue-500 bg-blue-500/5 px-2 py-1 rounded uppercase tracking-[0.2em] shadow-inner">{t('Tracking')}</span>
             </div>
             <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">18</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Issues Resolved</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Issues Resolved')}</p>
          </div>
 
          <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-3xl flex items-center justify-between">
             <div className="space-y-4">
                <div className="flex items-center space-x-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  <p className="text-sm font-bold text-slate-100">Site Compliance: 94.2%</p>
+                  <p className="text-sm font-bold text-slate-100">{t('Site Compliance:')} 94.2%</p>
                </div>
                <div className="w-48 h-2 bg-slate-800 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)] transition-all" style={{ width: '94.2%' }} />
                </div>
             </div>
             <div className="text-right">
-               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Safety Rating</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{t('Safety Rating')}</p>
                <span className="text-xl font-extrabold text-white tracking-widest">A- GRADE</span>
             </div>
          </div>
@@ -191,12 +193,12 @@ export default function SafetyPage() {
                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                <input 
                  type="text" 
-                 placeholder="Filter by project or issue..."
+                 placeholder={t('Filter by project or issue...')}
                  className="w-full bg-slate-900/50 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all font-medium"
                />
             </div>
             <div className="flex shrink-0 space-x-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
-               {['All', 'Critical', 'Open', 'Resolved'].map((tab) => (
+               {[t('All'), t('Critical'), t('Open'), t('Resolved')].map((tab) => (
                   <button key={tab} className="px-5 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-100 bg-slate-950 rounded-xl border border-slate-800 transition-all">{tab}</button>
                ))}
             </div>
@@ -231,13 +233,13 @@ export default function SafetyPage() {
                               {issue.description}
                            </h4>
                            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest flex items-center">
-                              <Clock className="w-3 h-3 mr-1" /> Reported {new Date(issue.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              <Clock className="w-3 h-3 mr-1" /> {t('Reported')} {new Date(issue.reported_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                            </p>
                         </div>
                      </div>
                      <div className="mt-4 md:mt-0 flex items-center space-x-6">
                         <div className="text-right">
-                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Assigned to</p>
+                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{t('Assigned to')}</p>
                            <div className="flex -space-x-2 self-end">
                               <div className="w-7 h-7 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] font-extrabold text-blue-500 uppercase font-mono">HS</div>
                               <div className="w-7 h-7 rounded-full border-2 border-slate-900 bg-slate-800 flex items-center justify-center text-[8px] font-extrabold text-blue-500 uppercase font-mono">AD</div>
@@ -271,27 +273,27 @@ export default function SafetyPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-white">Report Safety Incident</h3>
+              <h3 className="text-xl font-bold text-white">{t('Report Safety Incident')}</h3>
               <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-slate-300">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Incident Description</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Incident Description')}</label>
                 <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition-colors" placeholder="Describe the hazard..."></textarea>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Severity Level</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Severity Level')}</label>
                 <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition-colors">
-                  <option value="low">Low - Minor issue</option>
-                  <option value="medium">Medium - Needs attention</option>
-                  <option value="high">High - Serious risk</option>
-                  <option value="critical">Critical - Immediate danger</option>
+                  <option value="low">{t('Low - Minor issue')}</option>
+                  <option value="medium">{t('Medium - Needs attention')}</option>
+                  <option value="high">{t('High - Serious risk')}</option>
+                  <option value="critical">{t('Critical - Immediate danger')}</option>
                 </select>
               </div>
               <button type="submit" className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3.5 rounded-xl shadow-xl shadow-rose-900/20 uppercase tracking-widest text-xs transition-all mt-4">
-                Submit Report
+                {t('Submit Report')}
               </button>
             </form>
           </div>

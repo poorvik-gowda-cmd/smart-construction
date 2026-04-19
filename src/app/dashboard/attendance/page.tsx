@@ -16,8 +16,10 @@ import {
   Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function AttendancePage() {
+  const { t } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [labor, setLabor] = useState<Labor[]>([]);
   const [attendanceData, setAttendanceData] = useState<Record<string, Partial<Attendance>>>(
@@ -121,10 +123,10 @@ export default function AttendancePage() {
         .upsert(recordsToUpsert);
 
       if (error) throw error;
-      alert('Attendance saved successfully!');
+      alert(t('Attendance saved successfully!'));
     } catch (error) {
       console.error('Error saving attendance:', error);
-      alert('Failed to save attendance.');
+      alert(t('Failed to save attendance.'));
     } finally {
       setSaving(false);
     }
@@ -134,13 +136,13 @@ export default function AttendancePage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Daily Attendance</h1>
-          <p className="text-slate-500 mt-1">Mark workforce presence and calculate overtime for payroll.</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">{t('Daily Attendance')}</h1>
+          <p className="text-slate-500 mt-1">{t('Mark workforce presence and calculate overtime for payroll.')}</p>
         </div>
         <div className="flex items-center space-x-3">
           <button className="flex items-center space-x-2 bg-slate-900 border border-slate-800 hover:border-slate-700 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-200 transition-all">
              <Download className="w-4 h-4" />
-             <span>Export Log</span>
+             <span>{t('Export Log')}</span>
           </button>
           
           {role !== 'admin' && (
@@ -150,7 +152,7 @@ export default function AttendancePage() {
               className="flex items-center bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-blue-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest"
             >
               {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
-              {saving ? 'Saving...' : 'Save Attendance'}
+              {saving ? t('Saving...') : t('Save Attendance')}
             </button>
           )}
         </div>
@@ -170,25 +172,25 @@ export default function AttendancePage() {
                </div>
                <div className="h-8 w-px bg-slate-800" />
                <div className="flex bg-slate-950 border border-slate-800 p-1 rounded-xl">
-                  <button className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-slate-900 text-blue-400 rounded-lg border border-blue-500/10 shadow-inner">All Projects</button>
+                  <button className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-slate-900 text-blue-400 rounded-lg border border-blue-500/10 shadow-inner">{t('All Projects')}</button>
                </div>
             </div>
 
             <div className="flex items-center space-x-2">
                {role !== 'admin' && (
                  <>
-                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mark All:</span>
+                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Mark All:')}</span>
                    <button 
                     onClick={() => markAll('present')}
                     className="p-1 px-3 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
                    >
-                    Present
+                    {t('Present')}
                    </button>
                    <button 
                     onClick={() => markAll('absent')}
                     className="p-1 px-3 bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase rounded-lg border border-rose-500/20 hover:bg-rose-500/20 transition-all"
                    >
-                    Absent
+                    {t('Absent')}
                    </button>
                  </>
                )}
@@ -198,17 +200,17 @@ export default function AttendancePage() {
          {loading ? (
            <div className="py-20 flex flex-col items-center justify-center space-y-4">
              <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-             <p className="text-slate-400 text-sm animate-pulse">Loading workforce data...</p>
+             <p className="text-slate-400 text-sm animate-pulse">{t('Loading workforce data...')}</p>
            </div>
          ) : (
            <div className="overflow-x-auto">
               <table className="w-full text-left">
                  <thead>
                     <tr className="border-b border-white/5">
-                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Personnel</th>
-                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">Status</th>
-                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">Overtime (Hrs)</th>
-                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">Projected Pay</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t('Personnel')}</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">{t('Status')}</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">{t('Overtime (Hrs)')}</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">{t('Projected Pay')}</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-white/5">
@@ -226,7 +228,7 @@ export default function AttendancePage() {
                                       {person.full_name?.[0] || '?'}
                                    </div>
                                    <div className="space-y-0.5">
-                                      <p className="text-sm font-bold text-slate-100">{person.full_name || 'Unknown Worker'}</p>
+                                      <p className="text-sm font-bold text-slate-100">{person.full_name || t('Unknown Worker')}</p>
                                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{person.skill_tag}</p>
                                    </div>
                                 </div>

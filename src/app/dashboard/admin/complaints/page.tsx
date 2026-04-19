@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { MessageCircleWarning, CheckCircle2, Clock, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function InboxComplaintsPage() {
+  const { t } = useLanguage();
   const [complaints, setComplaints] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState('');
@@ -33,7 +35,6 @@ export default function InboxComplaintsPage() {
         .select('*, client:from_client_id(full_name), engineer:to_engineer_id(full_name), project:project_id(name)')
         .order('created_at', { ascending: false });
 
-      // Admins see all; engineers see only complaints directed at them
       if (userRole === 'engineer') {
         query = query.eq('to_engineer_id', user.id);
       }
@@ -54,19 +55,19 @@ export default function InboxComplaintsPage() {
   }
 
   const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
-    open: { label: 'Open', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', icon: Clock },
-    acknowledged: { label: 'Acknowledged', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: AlertCircle },
-    resolved: { label: 'Resolved', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
+    open: { label: t('Open'), color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', icon: Clock },
+    acknowledged: { label: t('Acknowledged'), color: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: AlertCircle },
+    resolved: { label: t('Resolved'), color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
   };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Complaint Inbox</h1>
+        <h1 className="text-3xl font-extrabold text-white tracking-tight">{t('Complaint Inbox')}</h1>
         <p className="text-slate-500 mt-1">
           {role === 'admin'
-            ? 'All complaints submitted by clients across all projects.'
-            : 'Complaints from your assigned clients.'}
+            ? t('All complaints submitted by clients across all projects.')
+            : t('Complaints from your assigned clients.')}
         </p>
       </div>
 
@@ -98,7 +99,7 @@ export default function InboxComplaintsPage() {
           <div className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mx-auto">
             <MessageCircleWarning className="w-8 h-8 text-slate-700" />
           </div>
-          <p className="text-slate-500 font-medium">No complaints yet. All clear! ✓</p>
+          <p className="text-slate-500 font-medium">{t('No complaints yet. All clear!')}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -111,11 +112,11 @@ export default function InboxComplaintsPage() {
                   <div className="space-y-1">
                     <h3 className="text-base font-bold text-white">{complaint.subject}</h3>
                     <div className="flex items-center space-x-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                      <span>From: <span className="text-blue-400">{complaint.client?.full_name || 'Unknown Client'}</span></span>
+                      <span>{t('From:')} <span className="text-blue-400">{complaint.client?.full_name || t('Unknown Client')}</span></span>
                       {complaint.project?.name && (
                         <>
                           <span>•</span>
-                          <span>Project: <span className="text-emerald-400">{complaint.project.name}</span></span>
+                          <span>{t('Project:')} <span className="text-emerald-400">{complaint.project.name}</span></span>
                         </>
                       )}
                     </div>
@@ -142,7 +143,7 @@ export default function InboxComplaintsPage() {
                           disabled={updating === complaint.id}
                           className="text-[10px] font-bold uppercase tracking-widest bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-lg hover:bg-blue-500/20 transition-all"
                         >
-                          {updating === complaint.id ? '...' : 'Acknowledge'}
+                          {updating === complaint.id ? '...' : t('Acknowledge')}
                         </button>
                       )}
                       <button
@@ -150,7 +151,7 @@ export default function InboxComplaintsPage() {
                         disabled={updating === complaint.id}
                         className="text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-all"
                       >
-                        {updating === complaint.id ? '...' : 'Mark Resolved'}
+                        {updating === complaint.id ? '...' : t('Mark Resolved')}
                       </button>
                     </div>
                   )}

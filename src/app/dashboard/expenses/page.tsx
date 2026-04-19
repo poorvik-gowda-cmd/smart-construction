@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 import { 
   CreditCard, 
   Search, 
@@ -34,6 +35,7 @@ import { createClient } from '@/lib/supabase';
 // Realtime data fetched from expenses table
 
 export default function ExpensesPage() {
+  const { t } = useLanguage();
   const [activeFilter, setActiveFilter] = useState('all');
   const [transactions, setTransactions] = useState<any[]>([]);
   const [expenseData, setExpenseData] = useState<any[]>([]);
@@ -96,9 +98,9 @@ export default function ExpensesPage() {
          setTotalSpent(spentSum);
          
          const catMap: any = { 'Labor': 0, 'Material': 0, 'Permits': 0, 'Equipment': 0, 'Misc': 0 };
-         txs.forEach(t => {
-            const cat = t.category || 'Misc';
-            if (catMap[cat] !== undefined) catMap[cat] += Number(t.amount || 0);
+         txs.forEach(tx => {
+            const cat = tx.category || 'Misc';
+            if (catMap[cat] !== undefined) catMap[cat] += Number(tx.amount || 0);
          });
          
          setExpenseData([
@@ -143,13 +145,13 @@ export default function ExpensesPage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Financial Oversight</h1>
-          <p className="text-slate-500 mt-1">{role === 'engineer' ? 'Assigned project budgets and expenditure.' : 'Monitor project spending, analyze budget variance, and track overheads.'}</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">{t('Financial Oversight')}</h1>
+          <p className="text-slate-500 mt-1">{role === 'engineer' ? t('Assigned project budgets and expenditure.') : t('Monitor project spending, analyze budget variance, and track overheads.')}</p>
         </div>
         {role === 'admin' && (
           <button onClick={() => setShowModal(true)} className="flex items-center bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-emerald-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest leading-none">
             <Plus className="w-5 h-5 mr-2" />
-            Add Expense
+            {t('Add Expense')}
           </button>
         )}
       </div>
@@ -168,7 +170,7 @@ export default function ExpensesPage() {
             </div>
             <div>
                <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">{formatINR(totalBudget)}</p>
-               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Assigned Project Budget</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">{t('Assigned Project Budget')}</p>
             </div>
          </div>
 
@@ -179,12 +181,12 @@ export default function ExpensesPage() {
                </div>
                <div className="flex items-center text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-full uppercase tracking-tighter">
                   <ArrowDownRight className="w-3.5 h-3.5 mr-1" />
-                  {totalBudget > totalSpent ? 'Under Budget' : 'Over Budget'}
+                  {totalBudget > totalSpent ? t('Under Budget') : t('Over Budget')}
                </div>
             </div>
             <div>
                <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">{formatINR(totalBudget - totalSpent)}</p>
-               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Budget Variance</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">{t('Budget Variance')}</p>
             </div>
          </div>
 
@@ -193,11 +195,11 @@ export default function ExpensesPage() {
                <div className="p-3 bg-emerald-600/10 rounded-2xl text-emerald-500">
                   <DollarSign className="w-6 h-6" />
                </div>
-               <span className="text-[10px] font-bold text-slate-500 bg-slate-950 px-2.5 py-1 rounded uppercase tracking-widest leading-none border border-white/5">Real-time</span>
+               <span className="text-[10px] font-bold text-slate-500 bg-slate-950 px-2.5 py-1 rounded uppercase tracking-widest leading-none border border-white/5">{t('Real-time')}</span>
             </div>
             <div>
                <p className="text-2xl font-extrabold text-slate-100 italic tracking-tight">{formatINR(totalSpent)}</p>
-               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Actual Expenditure</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 italic">{t('Actual Expenditure')}</p>
             </div>
          </div>
       </div>
@@ -207,7 +209,7 @@ export default function ExpensesPage() {
          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center">
                <PieIcon className="w-5 h-5 mr-3 text-blue-500" />
-               Cost Distribution
+               {t('Cost Distribution')}
             </h3>
             <div className="h-[300px]">
                <ResponsiveContainer width="100%" height="100%">
@@ -245,7 +247,7 @@ export default function ExpensesPage() {
          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center">
                <TrendingUp className="w-5 h-5 mr-3 text-emerald-500" />
-               Budget vs. Actual Trend
+               {t('Budget vs. Actual Trend')}
             </h3>
             <div className="h-[300px]">
                <ResponsiveContainer width="100%" height="100%">
@@ -280,14 +282,14 @@ export default function ExpensesPage() {
                <div className="flex items-center space-x-6">
                   <div className="flex items-center space-x-2">
                      <span className="w-2 h-2 rounded-full bg-blue-500" />
-                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Spent</span>
+                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">{t('Spent')}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                      <span className="w-2 h-2 rounded-full bg-slate-700" />
-                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">Planned</span>
+                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none">{t('Planned')}</span>
                   </div>
                </div>
-               <button className="text-[10px] font-extrabold text-blue-400 uppercase tracking-[0.2em] hover:text-blue-300">View Variance Report</button>
+               <button className="text-[10px] font-extrabold text-blue-400 uppercase tracking-[0.2em] hover:text-blue-300">{t('View Variance Report')}</button>
             </div>
          </div>
       </div>
@@ -295,20 +297,20 @@ export default function ExpensesPage() {
       <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
          <div className="p-6 border-b border-white/5 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-               <h3 className="text-lg font-bold text-white tracking-widest uppercase">Transaction Ledger</h3>
+               <h3 className="text-lg font-bold text-white tracking-widest uppercase">{t('Transaction Ledger')}</h3>
                <div className="h-6 w-px bg-slate-800" />
                <div className="relative group">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <input 
                     type="text" 
-                    placeholder="Search by category..."
+                    placeholder={t('Search by category...')}
                     className="bg-slate-950 border border-slate-800 rounded-xl py-1.5 pl-10 pr-4 text-xs text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-48 font-medium placeholder:italic"
                   />
                </div>
             </div>
             <button className="flex items-center text-[10px] font-bold text-slate-400 hover:text-white uppercase tracking-widest border border-slate-800 px-3 py-1.5 rounded-lg transition-all hover:bg-slate-950">
                <Filter className="w-3.5 h-3.5 mr-2" />
-               Advanced Filters
+               {t('Advanced Filters')}
             </button>
          </div>
 
@@ -316,29 +318,29 @@ export default function ExpensesPage() {
             <table className="w-full text-left">
                <thead>
                   <tr className="bg-slate-950/20 border-b border-white/5 uppercase font-mono italic">
-                     <th className="px-6 py-4 text-[10px] font-bold text-slate-600 tracking-widest">Date</th>
-                     <th className="px-6 py-4 text-[10px] font-bold text-slate-600 tracking-widest">Description</th>
-                     <th className="px-6 py-4 text-[10px] font-bold text-slate-600 tracking-widest text-center">Category</th>
-                     <th className="px-6 py-4 text-[10px] font-bold text-slate-600 tracking-widest text-right">Amount</th>
+                     <th className="px-6 py-4 text-[10px] font-bold text-slate-600 tracking-widest">{t('Date')}</th>
+                     <th className="px-6 py-4 text-[10px] font-bold text-slate-600 tracking-widest">{t('Description')}</th>
+                     <th className="px-6 py-4 text-[10px] font-bold text-slate-600 tracking-widest text-center">{t('Category')}</th>
+                     <th className="px-6 py-4 text-[10px] font-bold text-slate-600 tracking-widest text-right">{t('Amount')}</th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-white/5">
-                  {transactions.map((t) => (
-                    <tr key={t.id} className="hover:bg-white/[0.02] transition-colors group cursor-pointer">
+                  {transactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-white/[0.02] transition-colors group cursor-pointer">
                       <td className="px-6 py-5 text-xs text-slate-500 font-bold font-mono">
-                        {new Date(t.created_at).toLocaleDateString()}
+                        {new Date(tx.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-5">
-                        <p className="text-sm font-bold text-slate-100 tracking-tight group-hover:text-blue-400 transition-colors">{t.description || 'Expense Entry'}</p>
-                        <p className="text-[10px] text-slate-600 font-medium uppercase tracking-widest mt-0.5 italic">Ref: {t.id}</p>
+                        <p className="text-sm font-bold text-slate-100 tracking-tight group-hover:text-blue-400 transition-colors">{tx.description || t('Expense Entry')}</p>
+                        <p className="text-[10px] text-slate-600 font-medium uppercase tracking-widest mt-0.5 italic">Ref: {tx.id}</p>
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex justify-center">
-                           <span className="px-3 py-1 bg-slate-950 border border-slate-800 rounded-lg text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">{t.category || 'Misc'}</span>
+                           <span className="px-3 py-1 bg-slate-950 border border-slate-800 rounded-lg text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">{tx.category || 'Misc'}</span>
                         </div>
                       </td>
                       <td className="px-6 py-5 text-right font-mono italic">
-                        <span className="text-sm font-bold text-slate-100">{formatINR(Number(t.amount) || 0)}</span>
+                        <span className="text-sm font-bold text-slate-100">{formatINR(Number(tx.amount) || 0)}</span>
                       </td>
                     </tr>
                   ))}
@@ -352,18 +354,18 @@ export default function ExpensesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-white">Log Expense</h3>
+              <h3 className="text-xl font-bold text-white">{t('Log Expense')}</h3>
               <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-slate-300">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amount (₹)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Amount (₹)')}</label>
                 <input required type="number" step="1" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="1500" />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Category</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Category')}</label>
                 <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
                   <option value="Material">Material</option>
                   <option value="Labor">Labor</option>
@@ -374,20 +376,20 @@ export default function ExpensesPage() {
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Description</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Description')}</label>
                 <input required type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors" placeholder="e.g., Concrete Delivery" />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Project</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Project')}</label>
                 <select required value={formData.project_id} onChange={e => setFormData({...formData, project_id: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
-                  <option value="">-- Select Project --</option>
+                  <option value="">{t('-- Select Project --')}</option>
                   {projects.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
               </div>
               <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-xl shadow-emerald-900/20 uppercase tracking-widest text-xs transition-all mt-4">
-                Record Expense
+                {t('Record Expense')}
               </button>
             </form>
           </div>
