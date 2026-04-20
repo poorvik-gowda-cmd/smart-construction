@@ -153,48 +153,48 @@ export default function DashboardPage() {
         const currentStats: any[] = [];
         if (role !== 'client') {
           currentStats.push({ 
-            name: 'Active Projects', 
+            name: t('Active Projects'), 
             value: projectCount || 0, 
             icon: BarChart3, 
-            change: role === 'admin' ? '+1 this week' : 'Assigned to you', 
+            change: role === 'admin' ? t('+1 this week') : t('Assigned to you'), 
             changeType: 'increase' 
           });
         }
         
         // Total Labor (Global for Admin, Project-specific for Others)
         currentStats.push({ 
-          name: 'Total Labor', 
+          name: t('Total Labor'), 
           value: totalPresent, 
           icon: Users, 
-          change: `${attendanceRate}% attendance`, 
+          change: `${attendanceRate}% ${t('attendance')}`, 
           changeType: attendanceRate > 80 ? 'increase' : 'neutral' 
         });
 
         // ONLY Engineers and Clients see Material/Safety in overview (Project-dependent)
         if (role !== 'admin') {
           currentStats.push({ 
-            name: 'Material Stock', 
+            name: t('Material Stock'), 
             value: `${stockHealth}%`, 
             icon: Package, 
-            change: lowStockCount > 0 ? `${lowStockCount} items low` : 'Healthy', 
+            change: lowStockCount > 0 ? `${lowStockCount} ${t('items low')}` : t('Healthy'), 
             changeType: lowStockCount > 0 ? 'decrease' : 'increase', 
             color: 'bg-amber-500/10' 
           });
           currentStats.push({ 
-            name: 'Safety Incidents', 
+            name: t('Safety Incidents'), 
             value: safetyCount || 0, 
             icon: AlertTriangle, 
-            change: 'Active issues', 
+            change: t('Active issues'), 
             changeType: (safetyCount || 0) > 0 ? 'decrease' : 'increase', 
             color: 'bg-emerald-500/10' 
           });
         } else {
           // Admin sees Total Budget instead of project-specific stock/safety
           currentStats.push({ 
-            name: 'Total Ops Budget', 
+            name: t('Total Ops Budget'), 
             value: formatINR(totalBudget, true), 
             icon: DollarSign, 
-            change: `${budgetUtilized}% utilized`, 
+            change: `${budgetUtilized}% ${t('utilized')}`, 
             changeType: budgetUtilized < 90 ? 'increase' : 'decrease', 
             color: 'bg-emerald-500/10' 
           });

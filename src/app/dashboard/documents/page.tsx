@@ -139,12 +139,12 @@ export default function DocumentsPage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Document Vault</h1>
-          <p className="text-slate-500 mt-1">Centralized secure storage for plans, approvals, and project records.</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">{t('Document Vault')}</h1>
+          <p className="text-slate-500 mt-1">{t('Centralized secure storage for plans, approvals, and project records.')}</p>
         </div>
         <button onClick={() => setShowModal(true)} className="flex items-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-blue-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest">
           <Plus className="w-5 h-5 mr-2" />
-          Upload Document
+          {t('Upload Document')}
         </button>
       </div>
 
@@ -154,7 +154,7 @@ export default function DocumentsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input
             type="text"
-            placeholder="Search documents..."
+            placeholder={t('Search documents...')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
@@ -232,7 +232,7 @@ export default function DocumentsPage() {
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-white flex items-center">
-                <Upload className="w-5 h-5 mr-2 text-blue-500" /> Upload Document
+                <Upload className="w-5 h-5 mr-2 text-blue-500" /> {t('Upload Document')}
               </h3>
               <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-slate-300">
                 <X className="w-5 h-5" />
@@ -240,11 +240,11 @@ export default function DocumentsPage() {
             </div>
             <form onSubmit={handleUpload} className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Document Name</label>
-                <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="e.g., Site Plan Phase 1" />
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Document Name')}</label>
+                <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder={t('e.g., Site Plan Phase 1')} />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">File Type</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('File Type')}</label>
                 <select value={formData.file_type} onChange={e => setFormData({...formData, file_type: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
                   <option value="PDF">PDF</option>
                   <option value="XLSX">XLSX (Spreadsheet)</option>
@@ -254,30 +254,30 @@ export default function DocumentsPage() {
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Share with Client (Optional)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Share with Client (Optional)')}</label>
                 <select value={formData.shared_with_client_id} onChange={e => setFormData({...formData, shared_with_client_id: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
-                  <option value="">Team only (engineer & admin)</option>
+                  <option value="">{t('Team only (engineer & admin)')}</option>
                   {clients.map((c: any) => (
                     <option key={c.client_id} value={c.client_id}>{c.client?.full_name || c.client_id}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Select File</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Select File')}</label>
                 <div className="mt-1 border-2 border-dashed border-slate-700 rounded-xl p-6 text-center hover:border-blue-500/50 transition-colors cursor-pointer" onClick={() => document.getElementById('file-input')?.click()}>
                   {selectedFile ? (
                     <p className="text-sm font-bold text-blue-400">{selectedFile.name}</p>
                   ) : (
                     <>
                       <Upload className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                      <p className="text-xs text-slate-500">Click to browse or drag & drop</p>
+                      <p className="text-xs text-slate-500">{t('Click to browse or drag & drop')}</p>
                     </>
                   )}
                 </div>
                 <input id="file-input" type="file" className="hidden" onChange={e => setSelectedFile(e.target.files?.[0] || null)} />
               </div>
               <button type="submit" disabled={uploading} className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl shadow-xl shadow-blue-900/20 uppercase tracking-widest text-xs transition-all mt-4 flex items-center justify-center">
-                {uploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</> : 'Upload File'}
+                {uploading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('Uploading...')}</> : t('Upload File')}
               </button>
             </form>
           </div>

@@ -82,7 +82,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
             statusColors[project.status as keyof typeof statusColors]
           )}>
-            {project.status.replace('_', ' ')}
+            {t(project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('_', ' '))}
           </span>
           
           <div className="flex -space-x-2">

@@ -9,6 +9,7 @@ import {
   Eye, EyeOff, UserPlus, LogIn
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 
 type Role = 'admin' | 'engineer' | 'client';
 
@@ -56,6 +57,7 @@ export default function AuthPage() {
   const role = (params.role as Role) || 'admin';
   const config = roleConfig[role] || roleConfig.admin;
   const Icon = config.icon;
+  const { t } = useLanguage();
 
   const [tab, setTab] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -224,7 +226,7 @@ export default function AuthPage() {
           className="flex items-center space-x-2 text-slate-500 hover:text-slate-300 transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" />
-          <span className="text-xs font-bold uppercase tracking-widest">All Portals</span>
+          <span className="text-xs font-bold uppercase tracking-widest">{t('All Portals')}</span>
         </button>
 
         {/* Card */}
@@ -235,14 +237,14 @@ export default function AuthPage() {
               <Icon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold text-white tracking-tight">{config.label} Portal</h1>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">SiteMaster Construction Platform</p>
+              <h1 className="text-2xl font-extrabold text-white tracking-tight">{t(config.label)} {t('Portal')}</h1>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">{t('SiteMaster Construction Platform')}</p>
             </div>
           </div>
 
           {/* Description */}
           <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6 p-3 bg-slate-950/50 rounded-xl border border-slate-800">
-            {config.description}
+            {t(config.description)}
           </p>
 
           {/* Tabs */}
@@ -258,7 +260,7 @@ export default function AuthPage() {
                 )}
               >
                 <LogIn className="w-3.5 h-3.5" />
-                <span>Login</span>
+                <span>{t('Login')}</span>
               </button>
               <button
                 onClick={() => { setTab('signup'); setError(null); setSuccess(null); }}
@@ -270,13 +272,13 @@ export default function AuthPage() {
                 )}
               >
                 <UserPlus className="w-3.5 h-3.5" />
-                <span>Sign Up</span>
+                <span>{t('Sign Up')}</span>
               </button>
             </div>
           ) : (
             <div className="flex items-center justify-center bg-slate-950/70 border border-white/5 p-3 rounded-2xl mb-6">
                <LogIn className={cn('w-4 h-4 mr-2', config.accent)} />
-               <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Authorized Access Only</span>
+               <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{t('Authorized Access Only')}</span>
             </div>
           )}
 
@@ -284,14 +286,14 @@ export default function AuthPage() {
           <form onSubmit={tab === 'login' ? handleLogin : handleSignup} className="space-y-4">
             {tab === 'signup' && (
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Full Name</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">{t('Full Name')}</label>
                 <div className="relative group">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your full name"
+                    placeholder={t('Your full name')}
                     required
                     className="w-full bg-slate-950/70 border border-slate-800 rounded-2xl py-3 pl-11 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-white/10 focus:border-slate-700 transition-all placeholder:text-slate-700 text-sm"
                   />
@@ -301,14 +303,14 @@ export default function AuthPage() {
 
             {role === 'engineer' && tab === 'login' ? (
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Security Access Key</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">{t('Security Access Key')}</label>
                 <div className="relative group">
                   <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-amber-400 transition-colors" />
                   <input
                     type="text"
                     value={companyId}
                     onChange={(e) => setCompanyId(e.target.value)}
-                    placeholder="e.g. ENG-XXXX"
+                    placeholder={t('e.g. ENG-XXXX')}
                     required
                     className="w-full bg-slate-950/70 border border-slate-800 rounded-2xl py-3 pl-11 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-white/10 focus:border-slate-700 transition-all placeholder:text-slate-700 text-sm"
                   />
@@ -317,14 +319,14 @@ export default function AuthPage() {
             ) : (
               <>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Email Address</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">{t('Email Address')}</label>
                   <div className="relative group">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@company.com"
+                      placeholder={t('name@company.com')}
                       required
                       className="w-full bg-slate-950/70 border border-slate-800 rounded-2xl py-3 pl-11 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-white/10 focus:border-slate-700 transition-all placeholder:text-slate-700 text-sm"
                     />
@@ -332,7 +334,7 @@ export default function AuthPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Password</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">{t('Password')}</label>
                   <div className="relative group">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                     <input
@@ -381,7 +383,7 @@ export default function AuthPage() {
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  {tab === 'login' ? 'Enter Dashboard' : 'Create Account'}
+                  {tab === 'login' ? t('Enter Dashboard') : t('Create Account')}
                   <ArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -392,7 +394,7 @@ export default function AuthPage() {
         {/* Hammer branding */}
         <div className="flex items-center justify-center space-x-2 pt-2">
           <Hammer className="w-4 h-4 text-slate-700" />
-          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">SiteMaster · AI-Powered Construction Platform</span>
+          <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">{t('SiteMaster · AI-Powered Construction Platform')}</span>
         </div>
       </div>
     </div>
