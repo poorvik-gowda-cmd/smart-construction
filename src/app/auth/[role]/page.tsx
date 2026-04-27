@@ -107,7 +107,7 @@ export default function AuthPage() {
 
       // If key is valid, proceed with login using the email found in the profile
       loginEmail = profile.email || `${sanitizedKey.toLowerCase()}@sitemaster.com`;
-      loginPassword = '1234567890'; 
+      loginPassword = 'SiteMaster123!'; 
       
       console.log('--- Engineer Login Debug ---');
       console.log('Resolved Email:', loginEmail);
