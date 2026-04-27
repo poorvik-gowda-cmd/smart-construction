@@ -26,6 +26,7 @@ export default function DocumentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeType, setActiveType] = useState('All');
   const [documents, setDocuments] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<any[]>([]); // Engineer's assigned clients
 
@@ -41,19 +42,32 @@ export default function DocumentsPage() {
       let query = supabase.from('documents').select('*');
 
       if (userRole === 'engineer') {
-        const { data: assignments } = await supabase
-          .from('engineer_client_assignments')
-          .select('client_id, project_id')
-          .eq('engineer_id', user.id);
+        const [clientAssRes, staffAssRes] = await Promise.all([
+          supabase.from('engineer_client_assignments').select('project_id, client_id').eq('engineer_id', user.id),
+          supabase.from('project_assignments').select('project_id').eq('user_id', user.id)
+        ]);
         
-        const clientIds = assignments?.map(a => a.client_id) || [];
-        const projectIds = assignments?.map(a => a.project_id) || [];
+        const clientIds = clientAssRes.data?.map(a => a.client_id).filter(Boolean) || [];
+        const projectIds = [
+          ...(clientAssRes.data?.map(a => a.project_id) || []),
+          ...(staffAssRes.data?.map(a => a.project_id) || [])
+        ];
 
-        // Engineer sees: 1. Their own uploads 2. Docs shared with their clients 3. Docs in their projects
-        query = query.or(`uploaded_by.eq.${user.id},shared_with_client_id.in.(${clientIds.join(',')})`);
+        // Engineer sees: 1. Their own uploads 2. Docs in their projects 3. Docs shared with their clients
+        let filterParts = [`uploaded_by.eq.${user.id}`];
+        if (projectIds.length > 0) filterParts.push(`project_id.in.(${projectIds.join(',')})`);
+        if (clientIds.length > 0) filterParts.push(`shared_with_client_id.in.(${clientIds.join(',')})`);
+        
+        query = query.or(filterParts.join(','));
+
+        const { data: projData } = await supabase.from('projects').select('id, name').in('id', projectIds);
+        setProjects(projData || []);
       } else if (userRole === 'client') {
-        // Client sees: 1. Their own uploads 2. Docs shared specifically with them
+        // Client sees docs shared with them or uploaded by them
         query = query.or(`uploaded_by.eq.${user.id},shared_with_client_id.eq.${user.id}`);
+      } else if (userRole === 'admin') {
+        const { data: projData } = await supabase.from('projects').select('id, name');
+        setProjects(projData || []);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -78,7 +92,7 @@ export default function DocumentsPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', file_type: 'PDF', shared_with_client_id: '' });
+  const [formData, setFormData] = useState({ name: '', file_type: 'PDF', shared_with_client_id: '', project_id: '' });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -112,6 +126,8 @@ export default function DocumentsPage() {
         file_type: formData.file_type,
         shared_with_client_id: formData.shared_with_client_id || null,
         uploaded_by: currentUserId,
+        project_id: formData.project_id || null,
+        project: projects.find(p => p.id === formData.project_id)?.name || null,
         size: (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB',
         uploaded: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         category: formData.file_type === 'PDF' ? 'Plan' : 'Record'
@@ -241,16 +257,23 @@ export default function DocumentsPage() {
             <form onSubmit={handleUpload} className="space-y-4">
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Document Name')}</label>
-                <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder={t('e.g., Site Plan Phase 1')} />
+                <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="e.g., Site Plan Phase 1" />
               </div>
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('File Type')}</label>
                 <select value={formData.file_type} onChange={e => setFormData({...formData, file_type: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
                   <option value="PDF">PDF</option>
-                  <option value="XLSX">XLSX (Spreadsheet)</option>
-                  <option value="ZIP">ZIP (Archive)</option>
-                  <option value="IMG">Image</option>
-                  <option value="QUOTATION">Quotation</option>
+                  <option value="XLSX">{t('XLSX (Spreadsheet)')}</option>
+                  <option value="ZIP">{t('ZIP (Archive)')}</option>
+                  <option value="IMG">{t('Image')}</option>
+                  <option value="QUOTATION">{t('Quotation')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Assign to Project')}</label>
+                <select required value={formData.project_id} onChange={e => setFormData({...formData, project_id: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
+                  <option value="">{t('-- Select Project --')}</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
               <div>

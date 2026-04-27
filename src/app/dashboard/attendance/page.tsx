@@ -22,9 +22,9 @@ export default function AttendancePage() {
   const { t } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [labor, setLabor] = useState<Labor[]>([]);
-  const [attendanceData, setAttendanceData] = useState<Record<string, Partial<Attendance>>>(
-    {}
-  );
+  const [attendanceData, setAttendanceData] = useState<Record<string, Partial<Attendance>>>({});
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [role, setRole] = useState<string | null>(null);
@@ -35,43 +35,70 @@ export default function AttendancePage() {
       setLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-          if (profile) setRole(profile.role);
+        if (!user) return;
+
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        const userRole = profile?.role;
+        setRole(userRole);
+
+        // Fetch assigned projects for filtering
+        let projectIds: string[] = [];
+        if (userRole === 'engineer') {
+          const [clientAssRes, staffAssRes] = await Promise.all([
+            supabase.from('engineer_client_assignments').select('project_id').eq('engineer_id', user.id),
+            supabase.from('project_assignments').select('project_id').eq('user_id', user.id)
+          ]);
+          projectIds = [
+            ...(clientAssRes.data?.map(a => a.project_id) || []),
+            ...(staffAssRes.data?.map(a => a.project_id) || [])
+          ];
+          const { data: projData } = await supabase.from('projects').select('id, name').in('id', projectIds);
+          setProjects(projData || []);
+        } else {
+          const { data: projData } = await supabase.from('projects').select('id, name');
+          setProjects(projData || []);
         }
 
-        // 1. Fetch Labor
-        const { data: laborData, error: laborError } = await supabase
-          .from('labor')
-          .select('*');
-        
+        // 1. Fetch Labor filtered by project
+        let laborQuery = supabase.from('labor').select('*');
+        if (userRole === 'engineer') {
+          laborQuery = laborQuery.in('project_id', projectIds);
+        }
+        if (selectedProjectId !== 'all') {
+          laborQuery = laborQuery.eq('project_id', selectedProjectId);
+        }
+
+        const { data: laborData, error: laborError } = await laborQuery;
         if (laborError) throw laborError;
         setLabor(laborData || []);
 
-        // 2. Fetch Attendance for selected date
-        const { data: attendData, error: attendError } = await supabase
-          .from('attendance')
-          .select('*')
-          .eq('date', selectedDate);
-        
-        if (attendError) throw attendError;
+        // 2. Fetch Attendance for selected date and filtered labor
+        const lIds = (laborData || []).map(l => l.id);
+        if (lIds.length > 0) {
+          const { data: attendData, error: attendError } = await supabase
+            .from('attendance')
+            .select('*')
+            .eq('date', selectedDate)
+            .in('labor_id', lIds);
+          
+          if (attendError) throw attendError;
 
-        // Map behavior: Initial state is 'present' for all labor if no record exists
-        const initialAttendance: Record<string, Partial<Attendance>> = {};
-        (laborData || []).forEach(l => {
-          initialAttendance[l.id] = { status: 'present', overtime_hours: 0 };
-        });
+          const initialAttendance: Record<string, Partial<Attendance>> = {};
+          (laborData || []).forEach(l => {
+            initialAttendance[l.id] = { status: 'present', overtime_hours: 0 };
+          });
 
-        // Overlay existing DB records
-        (attendData || []).forEach(a => {
-          initialAttendance[a.labor_id] = { 
-            id: a.id,
-            status: a.status, 
-            overtime_hours: Number(a.overtime_hours) || 0 
-          };
-        });
-
-        setAttendanceData(initialAttendance);
+          (attendData || []).forEach(a => {
+            initialAttendance[a.labor_id] = { 
+              id: a.id,
+              status: a.status, 
+              overtime_hours: Number(a.overtime_hours) || 0 
+            };
+          });
+          setAttendanceData(initialAttendance);
+        } else {
+          setAttendanceData({});
+        }
       } catch (error) {
         console.error('Error fetching attendance data:', error);
       } finally {
@@ -79,7 +106,7 @@ export default function AttendancePage() {
       }
     }
     fetchData();
-  }, [selectedDate, supabase]);
+  }, [selectedDate, selectedProjectId, supabase]);
 
   const toggleStatus = (id: string, status: Attendance['status']) => {
     setAttendanceData((prev: any) => ({
@@ -118,18 +145,55 @@ export default function AttendancePage() {
         };
       });
 
+      if (recordsToUpsert.length === 0) return;
+
       const { error } = await supabase
         .from('attendance')
         .upsert(recordsToUpsert);
 
       if (error) throw error;
-      alert(t('Attendance saved successfully!'));
+      alert('Attendance saved successfully!');
     } catch (error) {
       console.error('Error saving attendance:', error);
-      alert(t('Failed to save attendance.'));
+      alert('Failed to save attendance.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleExport = () => {
+    if (labor.length === 0) {
+      alert('No data to export.');
+      return;
+    }
+
+    const headers = ['Personnel', 'Specialization', 'Status', 'Overtime (Hrs)', 'Projected Pay', 'Date'];
+    const rows = labor.map(person => {
+      const current = attendanceData[person.id] || { status: 'present', overtime_hours: 0 };
+      const pay = current.status === 'present' || current.status === 'overtime' 
+        ? person.daily_rate + (current.overtime_hours || 0) * (person.daily_rate / 8) * 1.5 
+        : 0;
+      
+      return [
+        person.full_name,
+        person.skill_tag,
+        current.status,
+        current.overtime_hours,
+        pay,
+        selectedDate
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `attendance_${selectedDate}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -140,7 +204,10 @@ export default function AttendancePage() {
           <p className="text-slate-500 mt-1">{t('Mark workforce presence and calculate overtime for payroll.')}</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="flex items-center space-x-2 bg-slate-900 border border-slate-800 hover:border-slate-700 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-200 transition-all">
+          <button 
+            onClick={handleExport}
+            className="flex items-center space-x-2 bg-slate-900 border border-slate-800 hover:border-slate-700 px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-200 transition-all"
+          >
              <Download className="w-4 h-4" />
              <span>{t('Export Log')}</span>
           </button>
@@ -170,27 +237,34 @@ export default function AttendancePage() {
                     className="bg-slate-950 border border-slate-800 px-10 py-2.5 rounded-xl text-xs font-bold text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
                </div>
-               <div className="h-8 w-px bg-slate-800" />
-               <div className="flex bg-slate-950 border border-slate-800 p-1 rounded-xl">
-                  <button className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-slate-900 text-blue-400 rounded-lg border border-blue-500/10 shadow-inner">{t('All Projects')}</button>
-               </div>
-            </div>
+                <div className="h-8 w-px bg-slate-800" />
+                <div className="flex bg-slate-950 border border-slate-800 p-1 rounded-xl">
+                   <select 
+                     value={selectedProjectId} 
+                     onChange={e => setSelectedProjectId(e.target.value)}
+                     className="bg-slate-900 text-blue-400 text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-lg border border-blue-500/10 focus:outline-none"
+                   >
+                     <option value="all">All Projects</option>
+                     {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                   </select>
+                </div>
+             </div>
 
             <div className="flex items-center space-x-2">
                {role !== 'admin' && (
                  <>
-                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Mark All:')}</span>
+                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mark All:</span>
                    <button 
                     onClick={() => markAll('present')}
                     className="p-1 px-3 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold uppercase rounded-lg border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
                    >
-                    {t('Present')}
+                    Present
                    </button>
                    <button 
                     onClick={() => markAll('absent')}
                     className="p-1 px-3 bg-rose-500/10 text-rose-500 text-[10px] font-bold uppercase rounded-lg border border-rose-500/20 hover:bg-rose-500/20 transition-all"
                    >
-                    {t('Absent')}
+                    Absent
                    </button>
                  </>
                )}
@@ -200,17 +274,17 @@ export default function AttendancePage() {
          {loading ? (
            <div className="py-20 flex flex-col items-center justify-center space-y-4">
              <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-             <p className="text-slate-400 text-sm animate-pulse">{t('Loading workforce data...')}</p>
+             <p className="text-slate-400 text-sm animate-pulse">Loading workforce data...</p>
            </div>
          ) : (
            <div className="overflow-x-auto">
               <table className="w-full text-left">
                  <thead>
                     <tr className="border-b border-white/5">
-                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t('Personnel')}</th>
-                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">{t('Status')}</th>
-                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">{t('Overtime (Hrs)')}</th>
-                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">{t('Projected Pay')}</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Personnel</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">Status</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">Overtime (Hrs)</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center">Projected Pay</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-white/5">
@@ -228,7 +302,7 @@ export default function AttendancePage() {
                                       {person.full_name?.[0] || '?'}
                                    </div>
                                    <div className="space-y-0.5">
-                                      <p className="text-sm font-bold text-slate-100">{person.full_name || t('Unknown Worker')}</p>
+                                      <p className="text-sm font-bold text-slate-100">{person.full_name || 'Unknown Worker'}</p>
                                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{person.skill_tag}</p>
                                    </div>
                                 </div>

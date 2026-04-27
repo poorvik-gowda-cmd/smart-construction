@@ -9,7 +9,8 @@ import {
   Users, 
   ShieldCheck, 
   Activity,
-  ArrowRight
+  ArrowRight,
+  MapPin
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
@@ -46,6 +47,16 @@ export default function AdminPortalPage() {
       bgColor: 'bg-rose-500/10',
       borderColor: 'border-rose-500/20',
       stats: t('Global Inbox')
+    },
+    {
+      title: t('Live Site Progress'),
+      description: t('View real-time geo-tagged updates and photos from all active construction sites.'),
+      href: '/dashboard/updates',
+      icon: MapPin,
+      color: 'text-amber-400',
+      bgColor: 'bg-amber-500/10',
+      borderColor: 'border-amber-500/20',
+      stats: t('Live Updates')
     }
   ];
 
@@ -86,7 +97,7 @@ export default function AdminPortalPage() {
       </div>
 
       {/* Navigation Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {adminSections.map((section, idx) => (
           <Link 
             key={section.title} 

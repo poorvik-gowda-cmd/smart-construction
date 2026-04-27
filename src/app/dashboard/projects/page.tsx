@@ -7,7 +7,9 @@ import { Search, Plus, Filter, LayoutGrid, List, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useLanguage } from '@/context/LanguageContext';
 
-// Realtime data fetched from standard projects table
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(' ');
+}
 
 export default function ProjectsPage() {
   const { t } = useLanguage();
@@ -30,12 +32,15 @@ export default function ProjectsPage() {
       let query = supabase.from('projects').select('*');
 
       if (profile?.role === 'engineer') {
-        const { data: assignments } = await supabase
-          .from('engineer_client_assignments')
-          .select('project_id')
-          .eq('engineer_id', user.id);
+        const [clientAssRes, staffAssRes] = await Promise.all([
+          supabase.from('engineer_client_assignments').select('project_id').eq('engineer_id', user.id),
+          supabase.from('project_assignments').select('project_id').eq('user_id', user.id)
+        ]);
         
-        const projectIds = assignments?.map(a => a.project_id) || [];
+        const projectIds = [
+          ...(clientAssRes.data?.map(a => a.project_id) || []),
+          ...(staffAssRes.data?.map(a => a.project_id) || [])
+        ];
         query = query.in('id', projectIds);
       }
 
@@ -67,18 +72,12 @@ export default function ProjectsPage() {
     }
   };
 
+  const statusFilters = ['all', 'ongoing', 'planned', 'delayed', 'completed'];
+
   const filteredProjects: Project[] = projects.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (activeFilter === 'all' || p.status === activeFilter)
   );
-
-  const filterLabels: Record<string, string> = {
-    'all': t('All'),
-    'ongoing': t('Ongoing') || 'Ongoing',
-    'planned': t('Planned'),
-    'delayed': t('Delayed') || 'Delayed',
-    'completed': t('Completed') || 'Completed',
-  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -107,7 +106,7 @@ export default function ProjectsPage() {
         </div>
 
         <div className="flex items-center space-x-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-          {['all', 'ongoing', 'planned', 'delayed', 'completed'].map((filter) => (
+          {statusFilters.map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
@@ -118,7 +117,7 @@ export default function ProjectsPage() {
                   : "bg-slate-950/30 text-slate-500 border-slate-800 hover:text-slate-300"
               )}
             >
-              {filterLabels[filter] || filter}
+              {t(filter)}
             </button>
           ))}
           <div className="h-8 w-px bg-slate-800 mx-2" />
@@ -173,8 +172,8 @@ export default function ProjectsPage() {
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Status')}</label>
                   <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors">
                     <option value="planned">{t('Planned')}</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
+                    <option value="ongoing">{t('Ongoing')}</option>
+                    <option value="completed">{t('Completed')}</option>
                   </select>
                 </div>
               </div>
@@ -187,9 +186,4 @@ export default function ProjectsPage() {
       )}
     </div>
   );
-}
-
-// Utility function duplicated for quick access in component
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
 }

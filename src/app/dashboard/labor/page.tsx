@@ -14,18 +14,17 @@ import {
   X
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
-import { useLanguage } from '@/context/LanguageContext';
 
 // Realtime data fetched from labor table
 
 export default function LaborPage() {
-  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [labor, setLabor] = useState<Labor[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ full_name: '', skill_tag: '', daily_rate: '' });
+  const [projects, setProjects] = useState<any[]>([]);
+  const [formData, setFormData] = useState({ full_name: '', skill_tag: '', daily_rate: '', project_id: '' });
 
   useEffect(() => {
     async function fetchLabor() {
@@ -34,16 +33,35 @@ export default function LaborPage() {
       if (!user) return;
 
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      const role = profile?.role;
+
+      // Fetch assigned projects first
+      let projectIds: string[] = [];
+      if (role === 'engineer') {
+        const [clientAssRes, staffAssRes] = await Promise.all([
+          supabase.from('engineer_client_assignments').select('project_id').eq('engineer_id', user.id),
+          supabase.from('project_assignments').select('project_id').eq('user_id', user.id)
+        ]);
+        
+        projectIds = [
+          ...(clientAssRes.data?.map(a => a.project_id) || []),
+          ...(staffAssRes.data?.map(a => a.project_id) || [])
+        ];
+        
+        // Fetch project details for the dropdown
+        const { data: projData } = await supabase.from('projects').select('id, name').in('id', projectIds);
+        setProjects(projData || []);
+        if (projData && projData.length > 0) {
+          setFormData(prev => ({ ...prev, project_id: projData[0].id }));
+        }
+      } else if (role === 'admin') {
+        const { data: projData } = await supabase.from('projects').select('id, name');
+        setProjects(projData || []);
+      }
 
       let query = supabase.from('labor').select('*');
 
-      if (profile?.role === 'engineer') {
-        const { data: assignments } = await supabase
-          .from('engineer_client_assignments')
-          .select('project_id')
-          .eq('engineer_id', user.id);
-        
-        const projectIds = assignments?.map(a => a.project_id) || [];
+      if (role === 'engineer') {
         query = query.in('project_id', projectIds);
       }
 
@@ -62,15 +80,16 @@ export default function LaborPage() {
     const { data, error } = await supabase.from('labor').insert([{
       full_name: formData.full_name,
       skill_tag: formData.skill_tag,
-      daily_rate: Number(formData.daily_rate)
+      daily_rate: Number(formData.daily_rate),
+      project_id: formData.project_id
     }]).select();
 
     if (data && !error) {
        setLabor([...labor, data[0]]);
        setShowModal(false);
-       setFormData({ full_name: '', skill_tag: '', daily_rate: '' });
+       setFormData(prev => ({ ...prev, full_name: '', skill_tag: '', daily_rate: '' }));
     } else {
-       alert("Error adding personnel.");
+       alert("Error adding personnel: " + (error?.message || "Unknown error"));
     }
   };
 
@@ -83,12 +102,12 @@ export default function LaborPage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">{t('Workforce Directory')}</h1>
-          <p className="text-slate-500 mt-1">{t('Manage personnel, skill sets, and active project assignments.')}</p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Workforce Directory</h1>
+          <p className="text-slate-500 mt-1">Manage personnel, skill sets, and active project assignments.</p>
         </div>
         <button onClick={() => setShowModal(true)} className="flex items-center bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-blue-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest">
           <Plus className="w-5 h-5 mr-2" />
-          {t('Add Personnel')}
+          Add Personnel
         </button>
       </div>
 
@@ -100,7 +119,7 @@ export default function LaborPage() {
           </div>
           <div>
             <p className="text-2xl font-bold text-slate-100">{labor.length}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{t('Total Workforce')}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Total Workforce</p>
           </div>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center space-x-4 flex-1">
@@ -109,7 +128,7 @@ export default function LaborPage() {
           </div>
           <div>
             <p className="text-2xl font-bold text-slate-100">{Math.round((labor.filter(l => l.project_id).length / (labor.length || 1)) * 100)}%</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{t('Allocation Rate')}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Allocation Rate</p>
           </div>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center space-x-4 flex-1">
@@ -118,7 +137,7 @@ export default function LaborPage() {
           </div>
           <div>
             <p className="text-2xl font-bold text-slate-100">{labor.filter(l => l.skill_tag?.toLowerCase().includes('safety')).length}</p>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{t('Safety Certified')}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Safety Certified</p>
           </div>
         </div>
       </div>
@@ -130,15 +149,15 @@ export default function LaborPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
             <input 
               type="text" 
-              placeholder={t('Search personnel...')}
+              placeholder="Search personnel..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
           <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 self-end md:self-auto">
-             <button className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-400 bg-slate-900 rounded-lg">{t('Active')}</button>
-             <button className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-300">{t('Archive')}</button>
+             <button className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-blue-400 bg-slate-900 rounded-lg">Active</button>
+             <button className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-300">Archive</button>
           </div>
         </div>
 
@@ -146,12 +165,12 @@ export default function LaborPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-950/50 border-b border-white/5">
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t('Personnel Name')}</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t('Specialization')}</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t('Current Site')}</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t('Daily Rate')}</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t('Status')}</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{t('Action')}</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Personnel Name</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Specialization</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Current Site</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Daily Rate</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Status</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -174,14 +193,14 @@ export default function LaborPage() {
                   <td className="px-6 py-5">
                     <div className="flex items-center text-slate-400 text-xs font-medium">
                       <Construction className="w-3.5 h-3.5 mr-2 text-amber-500/50" />
-                      {t('Project')} #{person.project_id}
+                      Project #{person.project_id}
                     </div>
                   </td>
                   <td className="px-6 py-5 text-sm font-bold text-slate-200">
-                    ₹{person.daily_rate} <span className="text-[10px] text-slate-500 font-medium">{t('/ day')}</span>
+                    ₹{person.daily_rate} <span className="text-[10px] text-slate-500 font-medium">/ day</span>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg text-[10px] font-bold uppercase">{t('Active')}</span>
+                    <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg text-[10px] font-bold uppercase">Active</span>
                   </td>
                   <td className="px-6 py-5">
                     <button className="p-1 hover:bg-slate-800 rounded-lg transition-colors">
@@ -200,26 +219,34 @@ export default function LaborPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-white">{t('Add Personnel')}</h3>
+              <h3 className="text-xl font-bold text-white">Add Personnel</h3>
               <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-slate-300">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Full Name')}</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Full Name</label>
                 <input required type="text" value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="e.g., Rahul Sharma" />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Skill / Specialization')}</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Skill / Specialization</label>
                 <input required type="text" value={formData.skill_tag} onChange={e => setFormData({...formData, skill_tag: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="e.g., Electrician" />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Daily Rate (₹)')}</label>
-                <input required type="number" value={formData.daily_rate} onChange={e => setFormData({...formData, daily_rate: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="1200" />
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Assign to Project</label>
+                <select 
+                  required 
+                  value={formData.project_id} 
+                  onChange={e => setFormData({...formData, project_id: e.target.value})} 
+                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                >
+                  <option value="">-- Select Project --</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
               </div>
               <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl shadow-xl shadow-blue-900/20 uppercase tracking-widest text-xs transition-all mt-4">
-                {t('Add Personnel')}
+                Add Personnel
               </button>
             </form>
           </div>

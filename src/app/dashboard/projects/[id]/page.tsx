@@ -36,14 +36,20 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       setUserRole(role);
 
       if (role !== 'admin') {
-        const { data: assignments } = await supabase
-          .from('project_assignments')
-          .select('project_id')
-          .eq('user_id', user.id)
-          .eq('project_id', projectId);
+        const [clientAssRes, staffAssRes] = await Promise.all([
+          supabase.from('engineer_client_assignments').select('project_id').eq('engineer_id', user.id),
+          supabase.from('project_assignments').select('project_id').eq('user_id', user.id)
+        ]);
         
-        if (!assignments || assignments.length === 0) {
-          setError('Restricted Access: You are not assigned to this site.');
+        const assignedProjectIds = [
+          ...(clientAssRes.data?.map(a => a.project_id) || []),
+          ...(staffAssRes.data?.map(a => a.project_id) || [])
+        ];
+        
+        const isAssigned = assignedProjectIds.includes(projectId);
+        
+        if (!isAssigned) {
+          setError(`Restricted Access: You are not assigned to this site. (ID: ${projectId.substring(0, 8)})`);
           return;
         }
       }

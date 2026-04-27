@@ -6,8 +6,6 @@ import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useLanguage } from '@/context/LanguageContext';
 
-// Realtime data fetched from suppliers table
-
 const TAG_COLORS = ['bg-blue-500/10 text-blue-400 border-blue-500/20', 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20', 'bg-violet-500/10 text-violet-400 border-violet-500/20'];
 
 export default function SuppliersPage() {
@@ -35,8 +33,7 @@ export default function SuppliersPage() {
     e.preventDefault();
     const supabase = createClient();
     
-    // Split tags string by comma and trim
-    const tagsArray = formData.material_tags.split(',').map(tag => tag.trim()).filter(tg => tg);
+    const tagsArray = formData.material_tags.split(',').map(tag => tag.trim()).filter(t => t);
 
     const { data, error } = await supabase.from('suppliers').insert([{
       name: formData.name,

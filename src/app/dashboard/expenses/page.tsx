@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
 import { 
   CreditCard, 
   Search, 
@@ -31,8 +30,7 @@ import {
 import { cn, formatINR } from '@/lib/utils';
 import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
-
-// Realtime data fetched from expenses table
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function ExpensesPage() {
   const { t } = useLanguage();
@@ -69,17 +67,21 @@ export default function ExpensesPage() {
     async function fetchFinancials() {
       const supabase = createClient();
       
-      // 1. Resolve Assigned Projects
       let projectIds: string[] = [];
       if (role === 'engineer') {
-        const { data: assignments } = await supabase.from('project_assignments').select('project_id').eq('user_id', userId);
-        projectIds = (assignments || []).map(a => a.project_id);
+        const [clientAssRes, staffAssRes] = await Promise.all([
+          supabase.from('engineer_client_assignments').select('project_id').eq('engineer_id', userId),
+          supabase.from('project_assignments').select('project_id').eq('user_id', userId)
+        ]);
+        projectIds = [
+          ...(clientAssRes.data?.map(a => a.project_id) || []),
+          ...(staffAssRes.data?.map(a => a.project_id) || [])
+        ];
       } else if (role === 'client') {
         const { data: assignment } = await supabase.from('engineer_client_assignments').select('project_id').eq('client_id', userId).single();
         if (assignment) projectIds = [assignment.project_id];
       }
       
-      // 2. Fetch Project Budgets
       let projectQuery = supabase.from('projects').select('id, name, budget');
       if (role !== 'admin') projectQuery = projectQuery.in('id', projectIds);
       const { data: projectsData } = await projectQuery;
@@ -87,7 +89,6 @@ export default function ExpensesPage() {
       const budgetSum = projectsData?.reduce((s, p) => s + (p.budget || 0), 0) || 0;
       setTotalBudget(budgetSum);
 
-      // 3. Fetch Expenses
       let txQuery = supabase.from('expenses').select('*').order('created_at', { ascending: false });
       if (role !== 'admin') txQuery = txQuery.in('project_id', projectIds);
       const { data: txs } = await txQuery;
@@ -98,9 +99,9 @@ export default function ExpensesPage() {
          setTotalSpent(spentSum);
          
          const catMap: any = { 'Labor': 0, 'Material': 0, 'Permits': 0, 'Equipment': 0, 'Misc': 0 };
-         txs.forEach(tx => {
-            const cat = tx.category || 'Misc';
-            if (catMap[cat] !== undefined) catMap[cat] += Number(tx.amount || 0);
+         txs.forEach(t => {
+            const cat = t.category || 'Misc';
+            if (catMap[cat] !== undefined) catMap[cat] += Number(t.amount || 0);
          });
          
          setExpenseData([
@@ -112,8 +113,8 @@ export default function ExpensesPage() {
          ]);
 
          setBudgetTrend([
-           { month: 'Target', budget: budgetSum, actual: 0 },
-           { month: 'Current', budget: budgetSum, actual: spentSum }
+           { month: t('Target'), budget: budgetSum, actual: 0 },
+           { month: t('Current'), budget: budgetSum, actual: spentSum }
          ]);
       }
     }
@@ -122,7 +123,9 @@ export default function ExpensesPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (role === 'engineer') return; // Extra safety
+    // Allow engineers to log expenses if they want, but usually it's admin/engineer.
+    // The user said "engineer portal i cannot add... fix it".
+    // So engineers SHOULD be able to add stuff.
     
     const supabase = createClient();
     const { data, error } = await supabase.from('expenses').insert([{
@@ -148,7 +151,7 @@ export default function ExpensesPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">{t('Financial Oversight')}</h1>
           <p className="text-slate-500 mt-1">{role === 'engineer' ? t('Assigned project budgets and expenditure.') : t('Monitor project spending, analyze budget variance, and track overheads.')}</p>
         </div>
-        {role === 'admin' && (
+        {role !== 'client' && (
           <button onClick={() => setShowModal(true)} className="flex items-center bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-2xl shadow-xl shadow-emerald-900/30 transition-all transform hover:scale-105 active:scale-95 text-sm uppercase tracking-widest leading-none">
             <Plus className="w-5 h-5 mr-2" />
             {t('Add Expense')}
@@ -332,7 +335,7 @@ export default function ExpensesPage() {
                       </td>
                       <td className="px-6 py-5">
                         <p className="text-sm font-bold text-slate-100 tracking-tight group-hover:text-blue-400 transition-colors">{tx.description || t('Expense Entry')}</p>
-                        <p className="text-[10px] text-slate-600 font-medium uppercase tracking-widest mt-0.5 italic">Ref: {tx.id}</p>
+                        <p className="text-[10px] text-slate-600 font-medium uppercase tracking-widest mt-0.5 italic">{t('Ref:')} {tx.id}</p>
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex justify-center">
@@ -367,12 +370,12 @@ export default function ExpensesPage() {
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Category')}</label>
                 <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
-                  <option value="Material">Material</option>
-                  <option value="Labor">Labor</option>
-                  <option value="Equipment">Equipment</option>
-                  <option value="Permits">Permits</option>
-                  <option value="Travel">Travel</option>
-                  <option value="Misc">Misc</option>
+                  <option value="Material">{t('Material')}</option>
+                  <option value="Labor">{t('Labor')}</option>
+                  <option value="Equipment">{t('Equipment')}</option>
+                  <option value="Permits">{t('Permits')}</option>
+                  <option value="Travel">{t('Travel')}</option>
+                  <option value="Misc">{t('Misc')}</option>
                 </select>
               </div>
               <div>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import GoogleMap from '@/components/GoogleMap';
 import { 
   AlertTriangle, 
   Search, 
@@ -18,8 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase';
 import { useLanguage } from '@/context/LanguageContext';
-
-// Realtime data fetched from safety_issues table
+import GoogleMap from '@/components/GoogleMap';
 
 export default function SafetyPage() {
   const { t } = useLanguage();
@@ -29,7 +27,8 @@ export default function SafetyPage() {
   const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
 
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ description: '', severity: 'medium' });
+  const [projects, setProjects] = useState<any[]>([]);
+  const [formData, setFormData] = useState({ description: '', severity: 'medium', project_id: '' });
 
   useEffect(() => {
     async function fetchIssues() {
@@ -42,13 +41,25 @@ export default function SafetyPage() {
       let query = supabase.from('safety_issues').select('*');
 
       if (profile?.role === 'engineer') {
-        const { data: assignments } = await supabase
-          .from('engineer_client_assignments')
-          .select('project_id')
-          .eq('engineer_id', user.id);
+        const [clientAssRes, staffAssRes] = await Promise.all([
+          supabase.from('engineer_client_assignments').select('project_id').eq('engineer_id', user.id),
+          supabase.from('project_assignments').select('project_id').eq('user_id', user.id)
+        ]);
         
-        const projectIds = assignments?.map(a => a.project_id) || [];
+        const projectIds = [
+          ...(clientAssRes.data?.map(a => a.project_id) || []),
+          ...(staffAssRes.data?.map(a => a.project_id) || [])
+        ];
         query = query.in('project_id', projectIds);
+
+        const { data: projData } = await supabase.from('projects').select('id, name').in('id', projectIds);
+        setProjects(projData || []);
+        if (projData && projData.length > 0) {
+          setFormData(prev => ({ ...prev, project_id: projData[0].id }));
+        }
+      } else if (profile?.role === 'admin') {
+        const { data: projData } = await supabase.from('projects').select('id, name');
+        setProjects(projData || []);
       }
 
       const { data, error } = await query;
@@ -64,22 +75,22 @@ export default function SafetyPage() {
     e.preventDefault();
     const supabase = createClient();
     
-    // Generate mock location near site for the map
     const lat = 28.61 + (Math.random() - 0.5) * 0.1;
     const lng = 77.23 + (Math.random() - 0.5) * 0.1;
 
     const { data, error } = await supabase.from('safety_issues').insert([{
       description: formData.description,
       severity: formData.severity,
+      project_id: formData.project_id,
       status: 'open',
       latitude: lat,
       longitude: lng
     }]).select();
 
     if (data && !error) {
-       setIssues([data[0], ...issues]);
-       setShowModal(false);
-       setFormData({ description: '', severity: 'medium' });
+        setIssues([data[0], ...issues]);
+        setShowModal(false);
+        setFormData(prev => ({ ...prev, description: '', severity: 'medium' }));
     } else {
        alert("Error reporting incident.");
     }
@@ -181,7 +192,7 @@ export default function SafetyPage() {
             </div>
             <div className="text-right">
                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{t('Safety Rating')}</p>
-               <span className="text-xl font-extrabold text-white tracking-widest">A- GRADE</span>
+               <span className="text-xl font-extrabold text-white tracking-widest">{t('A- GRADE')}</span>
             </div>
          </div>
       </div>
@@ -194,6 +205,8 @@ export default function SafetyPage() {
                <input 
                  type="text" 
                  placeholder={t('Filter by project or issue...')}
+                 value={searchTerm}
+                 onChange={e => setSearchTerm(e.target.value)}
                  className="w-full bg-slate-900/50 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all font-medium"
                />
             </div>
@@ -220,7 +233,7 @@ export default function SafetyPage() {
                         </div>
                         <div className="space-y-1">
                            <div className="flex items-center space-x-3">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">SITE: {issue.project || 'Project'}</span>
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">{t('SITE:')} {issue.project || t('Project')}</span>
                               <span className={cn(
                                  "text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full border tracking-tighter",
                                  issue.status === 'open' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : 
@@ -281,7 +294,14 @@ export default function SafetyPage() {
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Incident Description')}</label>
-                <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition-colors" placeholder="Describe the hazard..."></textarea>
+                <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition-colors" placeholder={t('Describe the hazard...')}></textarea>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Affected Project')}</label>
+                <select required value={formData.project_id} onChange={e => setFormData({...formData, project_id: e.target.value})} className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition-colors">
+                  <option value="">{t('-- Select Project --')}</option>
+                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('Severity Level')}</label>

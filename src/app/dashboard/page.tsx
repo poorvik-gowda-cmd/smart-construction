@@ -13,7 +13,8 @@ import {
   Clock,
   MapPin,
   Calendar,
-  DollarSign
+  DollarSign,
+  Plus
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -83,8 +84,14 @@ export default function DashboardPage() {
         // 1. Resolve Assigned Projects
         let projectIds: string[] = [];
         if (role === 'engineer') {
-          const { data: assignments } = await supabase.from('project_assignments').select('project_id').eq('user_id', userId);
-          projectIds = (assignments || []).map(a => a.project_id);
+          const [clientAssRes, staffAssRes] = await Promise.all([
+            supabase.from('engineer_client_assignments').select('project_id').eq('engineer_id', userId),
+            supabase.from('project_assignments').select('project_id').eq('user_id', userId)
+          ]);
+          projectIds = [
+            ...(clientAssRes.data?.map(a => a.project_id) || []),
+            ...(staffAssRes.data?.map(a => a.project_id) || [])
+          ];
         } else if (role === 'client') {
           const { data: assignment } = await supabase.from('engineer_client_assignments').select('project_id').eq('client_id', userId).single();
           if (assignment) projectIds = [assignment.project_id];
@@ -409,7 +416,18 @@ export default function DashboardPage() {
              </h3>
              <div className="flex items-center space-x-4">
                 <span className="text-[10px] font-bold text-slate-500 bg-slate-800 px-2 py-1 rounded italic uppercase tracking-widest border border-white/5">{t('Real-time Feed')}</span>
-                <button className="text-xs font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300">{t('View Map')}</button>
+                <Link href="/dashboard/updates">
+                  <button className="text-xs font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300 flex items-center">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    {t('View Map')}
+                  </button>
+                </Link>
+                <Link href="/dashboard/updates">
+                  <button className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center">
+                    <Plus className="w-3 h-3 mr-1" />
+                    {t('Add Update')}
+                  </button>
+                </Link>
              </div>
           </div>
           <div className="p-0 overflow-y-auto max-h-[500px] scrollbar-hide pb-20">

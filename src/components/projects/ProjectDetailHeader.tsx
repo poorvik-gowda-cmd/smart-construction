@@ -12,11 +12,13 @@ import {
   AlertCircle,
   X,
   Save,
-  ChevronLeft
+  ChevronLeft,
+  Plus
 } from 'lucide-react';
 import { cn, formatINR } from '@/lib/utils';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ProjectDetailHeaderProps {
   project: Project;
@@ -25,6 +27,7 @@ interface ProjectDetailHeaderProps {
 }
 
 export default function ProjectDetailHeader({ project, isAdmin, onUpdate }: ProjectDetailHeaderProps) {
+  const { t } = useLanguage();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditingDeadline, setIsEditingDeadline] = useState(false);
   const [newDeadline, setNewDeadline] = useState(project.end_date || '');
@@ -179,16 +182,26 @@ export default function ProjectDetailHeader({ project, isAdmin, onUpdate }: Proj
                   </div>
                 </div>
               </div>
-
-              {isAdmin && (
+              
+              <div className="flex gap-4">
                 <button 
-                  onClick={() => setIsDeleting(true)}
-                  className="w-full flex items-center justify-center space-x-2 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-2xl transition-all duration-300 font-bold text-[10px] uppercase tracking-widest"
+                  onClick={() => router.push(`/dashboard/updates?projectId=${project.id}&add=true`)}
+                  className="flex-1 flex items-center justify-center space-x-2 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl transition-all duration-300 font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-blue-900/20"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Terminate Project Record</span>
+                  <Plus className="w-4 h-4" />
+                  <span>{t('Post Site Update')}</span>
                 </button>
-              )}
+
+                {isAdmin && (
+                  <button 
+                    onClick={() => setIsDeleting(true)}
+                    className="flex-1 flex items-center justify-center space-x-2 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-2xl transition-all duration-300 font-bold text-[10px] uppercase tracking-widest"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>{t('Terminate Record')}</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

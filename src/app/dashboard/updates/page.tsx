@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import GoogleMap from '@/components/GoogleMap';
 import { SiteUpdate } from '@/types';
 import { createClient } from '@/lib/supabase';
@@ -19,8 +20,11 @@ import {
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
 
-export default function SiteUpdatesPage() {
+function SiteUpdatesContent() {
   const { t } = useLanguage();
+  const searchParams = useSearchParams();
+  const autoAdd = searchParams.get('add') === 'true';
+  const initialProjectId = searchParams.get('projectId');
   const [activeTab, setActiveTab] = useState<'feed' | 'map'>('feed');
   const [updates, setUpdates] = useState<SiteUpdate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,8 +35,16 @@ export default function SiteUpdatesPage() {
   const [posting, setPosting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [locLoading, setLocLoading] = useState(false);
   
   const supabase = createClient();
+
+  useEffect(() => {
+    if (autoAdd) setShowForm(true);
+    if (initialProjectId) setSelectedProjectId(initialProjectId);
+  }, [autoAdd, initialProjectId]);
 
   useEffect(() => {
     async function fetchUpdates() {
@@ -86,7 +98,9 @@ export default function SiteUpdatesPage() {
         setProjects(projectsRes.data || []);
         
         if (projectsRes.data && projectsRes.data.length > 0) {
-          setSelectedProjectId(projectsRes.data[0].id);
+          if (!initialProjectId) {
+            setSelectedProjectId(projectsRes.data[0].id);
+          }
         }
       } catch (error) {
         console.error('Error fetching site updates:', error);
@@ -104,6 +118,41 @@ export default function SiteUpdatesPage() {
       setPreviewUrl(URL.createObjectURL(file));
     }
   };
+
+  const refreshLocation = async () => {
+    setLocLoading(true);
+    try {
+      if ('geolocation' in navigator) {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        });
+        setLat(position.coords.latitude);
+        setLng(position.coords.longitude);
+      } else {
+        alert('Geolocation is not supported by this browser.');
+      }
+    } catch (error) {
+      console.warn('Geolocation failed:', error);
+      alert('Failed to get live location. Please ensure location permissions are enabled.');
+      // Set defaults if failed and not already set
+      if (lat === null) {
+        setLat(28.61);
+        setLng(77.23);
+      }
+    } finally {
+      setLocLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showForm && lat === null) {
+      refreshLocation();
+    }
+  }, [showForm]);
 
   const handlePostUpdate = async () => {
     if (!newNote.trim()) return;
@@ -133,22 +182,25 @@ export default function SiteUpdatesPage() {
         finalImageUrl = publicUrl;
       }
 
-      let lat = 28.61;
-      let lng = 77.23;
+      let finalLat = lat || 28.61;
+      let finalLng = lng || 77.23;
 
-      if ('geolocation' in navigator) {
-        try {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 0
+      // If lat/lng still null, try one last time
+      if (lat === null) {
+        if ('geolocation' in navigator) {
+          try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+              });
             });
-          });
-          lat = position.coords.latitude;
-          lng = position.coords.longitude;
-        } catch (geoError) {
-          console.warn('Geolocation failed, falling back to default:', geoError);
+            finalLat = position.coords.latitude;
+            finalLng = position.coords.longitude;
+          } catch (geoError) {
+            console.warn('Final geolocation attempt failed:', geoError);
+          }
         }
       }
       
@@ -159,8 +211,8 @@ export default function SiteUpdatesPage() {
           user_id: user.id,
           image_url: finalImageUrl,
           notes: newNote,
-          latitude: lat,
-          longitude: lng
+          latitude: finalLat,
+          longitude: finalLng
         })
         .select()
         .single();
@@ -171,6 +223,8 @@ export default function SiteUpdatesPage() {
       setNewNote('');
       setSelectedFile(null);
       setPreviewUrl(null);
+      setLat(null);
+      setLng(null);
       setShowForm(false);
     } catch (error: any) {
       console.error('Error posting update:', error);
@@ -208,6 +262,13 @@ export default function SiteUpdatesPage() {
                 {t('Live Map')}
              </button>
           </div>
+          <button 
+            onClick={() => setShowForm(true)}
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-900/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('Add Update')}</span>
+          </button>
         </div>
       </div>
 
@@ -239,7 +300,7 @@ export default function SiteUpdatesPage() {
                 <textarea 
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="What's happening on site today? Describe the milestone..."
+                  placeholder={t("What's happening on site today? Describe the milestone...")}
                   className="w-full h-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 min-h-[120px]"
                 />
              </div>
@@ -261,6 +322,30 @@ export default function SiteUpdatesPage() {
                          <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                       </label>
                    )}
+                </div>
+                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                   <div className="flex items-center space-x-3">
+                      <div className={cn(
+                        "p-2 rounded-lg bg-slate-900",
+                        lat ? "text-emerald-500" : "text-amber-500"
+                      )}>
+                         <MapPin className="w-4 h-4" />
+                      </div>
+                      <div>
+                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">{t('Live Location')}</p>
+                         <p className="text-xs font-mono text-slate-200">
+                            {locLoading ? t('Detecting...') : (lat ? `${lat.toFixed(4)}, ${lng?.toFixed(4)}` : t('Not set'))}
+                         </p>
+                      </div>
+                   </div>
+                   <button 
+                     onClick={refreshLocation}
+                     disabled={locLoading}
+                     className="p-2 hover:bg-slate-900 rounded-lg text-blue-500 transition-colors"
+                     title={t('Refresh Location')}
+                   >
+                      <Loader2 className={cn("w-4 h-4", locLoading && "animate-spin")} />
+                   </button>
                 </div>
                 <div className="flex justify-end">
                   <button 
@@ -306,7 +391,7 @@ export default function SiteUpdatesPage() {
                         <div className="w-8 h-8 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center font-bold text-xs text-blue-400 shadow-inner">
                            {typeof update.user_id === 'string' ? update.user_id[0].toUpperCase() : 'U'}
                         </div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Supervisor #{update.user_id?.slice(-4) || 'ANON'}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('Supervisor #')}{update.user_id?.slice(-4) || 'ANON'}</span>
                      </div>
                      <div className="flex items-center text-[10px] text-slate-600 font-bold uppercase tracking-widest">
                         <Clock className="w-3.5 h-3.5 mr-1.5" />
@@ -345,3 +430,10 @@ export default function SiteUpdatesPage() {
   );
 }
 
+export default function SiteUpdatesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SiteUpdatesContent />
+    </Suspense>
+  );
+}

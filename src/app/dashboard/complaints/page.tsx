@@ -25,7 +25,6 @@ export default function ComplaintsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get assignment to know which engineer to address the complaint to
     const { data: asgn } = await supabase
       .from('engineer_client_assignments')
       .select('engineer_id, project_id')
@@ -33,7 +32,6 @@ export default function ComplaintsPage() {
       .single();
     setAssignment(asgn);
 
-    // Get all complaints from this client
     const { data } = await supabase
       .from('complaints')
       .select('*')
@@ -97,7 +95,7 @@ export default function ComplaintsPage() {
       <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 flex items-start space-x-3">
         <AlertCircle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
         <p className="text-sm text-slate-400">
-          {t('This complaint will be sent to your engineer and the admin team simultaneously.')}
+          {t('All complaints are automatically forwarded to your assigned engineer')} <strong className="text-white">{t('and')}</strong> {t('the admin team simultaneously. You can track the status of each complaint here.')}
         </p>
       </div>
 
@@ -158,7 +156,7 @@ export default function ComplaintsPage() {
                   value={formData.subject}
                   onChange={e => setFormData({...formData, subject: e.target.value})}
                   className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition-colors"
-                  placeholder="e.g., Material quality issue"
+                  placeholder={t('e.g., Material quality issue')}
                 />
               </div>
               <div>
@@ -169,7 +167,7 @@ export default function ComplaintsPage() {
                   onChange={e => setFormData({...formData, message: e.target.value})}
                   rows={4}
                   className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition-colors resize-none"
-                  placeholder="Describe your concern in detail..."
+                  placeholder={t('Describe your concern in detail...')}
                 />
               </div>
               <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 text-[10px] text-slate-500">
