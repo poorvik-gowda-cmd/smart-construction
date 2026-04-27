@@ -248,7 +248,7 @@ export default function AuthPage() {
           </p>
 
           {/* Tabs */}
-          {(role === 'client') ? (
+          {role === 'client' ? (
             <div className="flex bg-slate-950/70 border border-slate-800 p-1 rounded-2xl mb-6">
               <button
                 onClick={() => { setTab('login'); setError(null); setSuccess(null); }}
@@ -275,15 +275,26 @@ export default function AuthPage() {
                 <span>{t('Sign Up')}</span>
               </button>
             </div>
+          ) : role === 'engineer' ? (
+            <div className="flex items-center justify-center bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl mb-6">
+               <ShieldCheck className="w-4 h-4 mr-2 text-amber-500" />
+               <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">{t('ID-Based Access Only')}</span>
+            </div>
           ) : (
             <div className="flex items-center justify-center bg-slate-950/70 border border-white/5 p-3 rounded-2xl mb-6">
-               <LogIn className={cn('w-4 h-4 mr-2', config.accent)} />
+               <ShieldCheck className={cn('w-4 h-4 mr-2', config.accent)} />
                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{t('Authorized Access Only')}</span>
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={tab === 'login' ? handleLogin : handleSignup} className="space-y-4">
+          {role === 'engineer' && tab === 'signup' ? (
+            <div className="text-center py-6 space-y-4">
+              <HardHat className="w-12 h-12 text-slate-700 mx-auto opacity-20" />
+              <p className="text-xs text-slate-500 font-medium">{t('Engineer accounts must be created by the system administrator.')}</p>
+            </div>
+          ) : (
+            <form onSubmit={tab === 'login' ? handleLogin : handleSignup} className="space-y-4">
             {tab === 'signup' && (
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">{t('Full Name')}</label>
