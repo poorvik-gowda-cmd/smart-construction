@@ -76,13 +76,19 @@ export default function DocumentsPage() {
         setDocuments(data);
       }
 
-      // Fetch clients assigned to this engineer (for the share selector)
+      // Fetch clients for the share selector (Admins see all, Engineers see their own)
       if (userRole === 'engineer') {
         const { data: assignedClients } = await supabase
           .from('engineer_client_assignments')
           .select('client_id, client:client_id(full_name)')
           .eq('engineer_id', user.id);
         setClients(assignedClients || []);
+      } else if (userRole === 'admin') {
+        const { data: allClients } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .eq('role', 'client');
+        setClients(allClients?.map(c => ({ client_id: c.id, client: { full_name: c.full_name } })) || []);
       }
 
       setLoading(false);

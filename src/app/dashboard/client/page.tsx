@@ -91,11 +91,11 @@ export default function ClientPage() {
         .eq('project_id', projectId);
       setMaterials(mats || []);
 
-      // 5. Documents shared with this client
+      // 5. Documents for this project
       const { data: docs } = await supabase
         .from('documents')
         .select('*')
-        .eq('shared_with_client_id', user.id)
+        .eq('project_id', projectId)
         .order('created_at', { ascending: false });
       setDocuments(docs || []);
 

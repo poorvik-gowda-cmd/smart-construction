@@ -61,7 +61,7 @@ export default function ProjectDocumentList({ projectId }: ProjectDocumentListPr
 
   const handleGenerateQR = async (docId: string) => {
     try {
-      // 1. Get the client assigned to this project
+      // 1. Get the client assigned to this project (optional for QR generation)
       const { data: assignment } = await supabase
         .from('engineer_client_assignments')
         .select('client_id')
@@ -69,23 +69,25 @@ export default function ProjectDocumentList({ projectId }: ProjectDocumentListPr
         .maybeSingle();
 
       const clientId = assignment?.client_id;
-      if (!clientId) {
-        alert('No client is assigned to this project yet. Please assign a client first.');
-        return;
-      }
-
+      
       // 2. Generate QR URL
       const qrData = `PAYMENT-${docId}-${Math.floor(1000 + Math.random() * 9000)}`;
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(qrData)}`;
       
-      // 3. Update document with QR and share with THAT particular client
+      // 3. Update document with QR
+      const updatePayload: any = { 
+        payment_qr_url: qrUrl,
+        payment_status: 'PENDING'
+      };
+      
+      // If client exists, share with them immediately
+      if (clientId) {
+        updatePayload.shared_with_client_id = clientId;
+      }
+      
       const { error } = await supabase
         .from('documents')
-        .update({ 
-          payment_qr_url: qrUrl,
-          payment_status: 'PENDING',
-          shared_with_client_id: clientId
-        })
+        .update(updatePayload)
         .eq('id', docId);
 
       if (error) throw error;
